@@ -1,6 +1,3 @@
----
-
-```markdown
 # 🌿 GSTC Self Assistant
 
 **GSTC Self Assistant** adalah platform web terpusat yang dirancang untuk memfasilitasi dan menyederhanakan proses sertifikasi pariwisata berkelanjutan berbasis standar **Global Sustainable Tourism Council (GSTC)**.  
