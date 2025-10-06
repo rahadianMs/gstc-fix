@@ -24,34 +24,29 @@ import {
     QuestionMarkCircleIcon,
     UserCircleIcon,
     ShieldCheckIcon,
-    ChevronDownIcon
+    ChevronDownIcon,
+    DocumentChartBarIcon
 } from './Icons.jsx';
-
 
 // Komponen Dasbor Utama
 export default function Dashboard({ supabase, user, activeDashboardPage, setActiveDashboardPage, isUserMenuOpen, setIsUserMenuOpen, userMenuRef, handleLogout }) {
     const [isComplianceOpen, setIsComplianceOpen] = useState(false);
     const [userRole, setUserRole] = useState(null);
     const [loadingRole, setLoadingRole] = useState(true);
+    const [dataVersion, setDataVersion] = useState(Date.now());
 
-    // Mengambil peran pengguna saat komponen dimuat
+
     useEffect(() => {
         const fetchUserRole = async () => {
             if (!user) return;
             setLoadingRole(true);
-            const { data } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
-            
-            setUserRole(data?.role || 'destination'); // Default ke 'destination' jika tidak ditemukan
+            const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+            setUserRole(data?.role || 'destination');
             setLoadingRole(false);
         };
         fetchUserRole();
     }, [user, supabase]);
-    
-    // Efek untuk membuka dropdown secara otomatis jika halaman aktif ada di dalamnya
+
     useEffect(() => {
         const isCompliancePageActive = (typeof activeDashboardPage === 'string' && activeDashboardPage.startsWith('compliance-')) ||
                                        (typeof activeDashboardPage === 'object' && activeDashboardPage?.page === 'admin-destination-detail');
@@ -60,25 +55,33 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         }
     }, [activeDashboardPage]);
 
-
-    // Mendefinisikan menu sidebar
-    const sidebarLinks = [
-        { id: 'beranda', text: 'Beranda', icon: <HomeIcon /> },
-        { id: 'what-to-do', text: 'What To Do', icon: <ClipboardCheckIcon /> },
-        { 
-            id: 'standard-compliance', text: 'Standar Kepatuhan', icon: <ShieldCheckIcon />,
-            children: [
-                { id: 'compliance-a', text: 'BAGIAN A: Pengelolaan Berkelanjutan' },
-                { id: 'compliance-b', text: 'BAGIAN B: Keberlanjutan Sosial-Ekonomi' },
-                { id: 'compliance-c', text: 'BAGIAN C: Keberlanjutan Budaya' },
-                { id: 'compliance-d', text: 'BAGIAN D: Keberlanjutan Lingkungan' },
-            ] 
-        },
-        { id: 'pembelajaran', text: 'Pembelajaran', icon: <AcademicCapIcon /> },
-        { id: 'panduan', text: 'Panduan', icon: <QuestionMarkCircleIcon /> },
-    ];
-
-    // Logika untuk menentukan judul halaman
+    let sidebarLinks = [];
+    if (userRole === 'consultant') {
+        sidebarLinks = [
+            { id: 'beranda', text: 'Beranda', icon: <HomeIcon /> },
+            { id: 'review-compliance', text: 'Review Kepatuhan', icon: <DocumentChartBarIcon /> },
+            { id: 'what-to-do', text: 'What To Do', icon: <ClipboardCheckIcon /> },
+            { id: 'pembelajaran', text: 'Pembelajaran', icon: <AcademicCapIcon /> },
+            { id: 'panduan', text: 'Panduan', icon: <QuestionMarkCircleIcon /> },
+        ];
+    } else {
+        sidebarLinks = [
+            { id: 'beranda', text: 'Beranda', icon: <HomeIcon /> },
+            { id: 'what-to-do', text: 'What To Do', icon: <ClipboardCheckIcon /> },
+            { 
+                id: 'standard-compliance', text: 'Standar Kepatuhan', icon: <ShieldCheckIcon />,
+                children: [
+                    { id: 'compliance-a', text: 'BAGIAN A: Pengelolaan Berkelanjutan' },
+                    { id: 'compliance-b', text: 'BAGIAN B: Keberlanjutan Sosial-Ekonomi' },
+                    { id: 'compliance-c', text: 'BAGIAN C: Keberlanjutan Budaya' },
+                    { id: 'compliance-d', text: 'BAGIAN D: Keberlanjutan Lingkungan' },
+                ] 
+            },
+            { id: 'pembelajaran', text: 'Pembelajaran', icon: <AcademicCapIcon /> },
+            { id: 'panduan', text: 'Panduan', icon: <QuestionMarkCircleIcon /> },
+        ];
+    }
+    
     const getPageTitle = () => {
         if (typeof activeDashboardPage === 'object' && activeDashboardPage?.page === 'admin-destination-detail') {
             return "Review Destinasi";
@@ -96,58 +99,42 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
     };
     const pageTitle = getPageTitle();
 
-    // Komponen untuk mengatur konten halaman yang aktif
     const PageContent = () => {
-        if (loadingRole) {
-            return <div className="text-center p-8">Memverifikasi peran pengguna...</div>;
-        }
+        if (loadingRole) return <div className="text-center p-8">Memverifikasi peran pengguna...</div>;
 
-        // --- Logika Routing Utama ---
         if (typeof activeDashboardPage === 'object' && activeDashboardPage !== null) {
             if (activeDashboardPage.page === 'admin-destination-detail') {
-                return <AdminDestinationDetailPage 
-                            destinationId={activeDashboardPage.destinationId} 
-                            supabase={supabase}
-                            setActiveDashboardPage={setActiveDashboardPage} 
-                        />;
+                return <AdminDestinationDetailPage destinationId={activeDashboardPage.destinationId} supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />;
             }
         }
         
-        if (userRole === 'consultant' && activeDashboardPage === 'beranda') {
-            return <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />;
-        }
-        
-        if (activeDashboardPage.startsWith('compliance-')) {
-            const pillar = activeDashboardPage.split('-')[1].toUpperCase();
-            return <PillarDetailPage pillar={pillar} supabase={supabase} user={user} />;
-        }
-
         switch (activeDashboardPage) {
             case 'beranda':
-                return <BerandaPage user={user} supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />;
-            case 'what-to-do':
-                return <NotificationPage />;
+                return userRole === 'consultant' 
+                    ? <div className="text-center"><h1>Selamat Datang, Konsultan!</h1><p>Halaman beranda untuk konsultan.</p></div> 
+                    : <BerandaPage user={user} supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} dataVersion={dataVersion} />;
+            case 'review-compliance':
+                return <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />;
             case 'standard-compliance':
                 return <StandardCompliancePage setActiveDashboardPage={setActiveDashboardPage} />;
-            case 'pembelajaran':
-                return <PembelajaranPage />;
-            case 'panduan':
-                return <PanduanPage />;
-            case 'tentang':
-                return <AboutPage />;
-            case 'akun':
-                return <AccountPage user={user} supabase={supabase} />;
-            case 'faq':
-                return <FaqPage />;
+            case 'compliance-a': return <PillarDetailPage pillar="A" supabase={supabase} user={user} />;
+            case 'compliance-b': return <PillarDetailPage pillar="B" supabase={supabase} user={user} />;
+            case 'compliance-c': return <PillarDetailPage pillar="C" supabase={supabase} user={user} />;
+            case 'compliance-d': return <PillarDetailPage pillar="D" supabase={supabase} user={user} />;
+            case 'what-to-do': return <NotificationPage />;
+            case 'pembelajaran': return <PembelajaranPage />;
+            case 'panduan': return <PanduanPage />;
+            case 'tentang': return <AboutPage />;
+            case 'akun': return <AccountPage user={user} supabase={supabase} />;
+            case 'faq': return <FaqPage />;
             default:
-                 return <div className="text-center p-8">Halaman tidak ditemukan atau sedang dalam pengembangan.</div>;
+                 return <div className="text-center p-8">Halaman tidak ditemukan.</div>;
         }
     };
     
-    // Fungsi untuk menentukan apakah sebuah link atau parent-nya aktif
     const isLinkActive = (link) => {
         if (link.id === activeDashboardPage) return true;
-        if (link.id === 'standard-compliance' && typeof activeDashboardPage === 'object' && activeDashboardPage?.page === 'admin-destination-detail') {
+        if ((link.id === 'standard-compliance' || link.id === 'review-compliance') && typeof activeDashboardPage === 'object' && activeDashboardPage?.page === 'admin-destination-detail') {
             return true;
         }
         if (link.children && typeof activeDashboardPage === 'string') {
@@ -167,34 +154,19 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                         const isActive = isLinkActive(link);
                         return link.children ? (
                             <div key={link.id}>
-                                <button
-                                    onClick={() => setIsComplianceOpen(!isComplianceOpen)}
-                                    className={`w-full flex items-center justify-between gap-4 p-3 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-white/10 text-white font-semibold' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
-                                >
+                                <button onClick={() => setIsComplianceOpen(!isComplianceOpen)} className={`w-full flex items-center justify-between gap-4 p-3 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-white/10 text-white font-semibold' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}>
                                     <div className="flex items-center gap-4">{link.icon}<span>{link.text}</span></div>
                                     <ChevronDownIcon className={`w-4 h-4 transition-transform ${isComplianceOpen ? 'rotate-180' : ''}`} />
                                 </button>
-                                <AnimatePresence>
-                                    {isComplianceOpen && (
-                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-8 mt-1 space-y-1">
-                                            {link.children.map(child => (
-                                                <button
-                                                    key={child.id}
-                                                    onClick={() => setActiveDashboardPage(child.id)}
-                                                    className={`w-full text-left py-2 px-3 rounded-md text-sm transition-colors ${activeDashboardPage === child.id ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
-                                                >
-                                                    {child.text}
-                                                </button>
-                                            ))}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                <AnimatePresence>{isComplianceOpen && ( <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-8 mt-1 space-y-1">
+                                    {link.children.map(child => (
+                                        <button key={child.id} onClick={() => setActiveDashboardPage(child.id)} className={`w-full text-left py-2 px-3 rounded-md text-sm transition-colors ${activeDashboardPage === child.id ? 'text-white font-bold bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>{child.text}</button>
+                                    ))}
+                                </motion.div>)}</AnimatePresence>
                             </div>
                         ) : (
-                            <button key={link.id} onClick={() => setActiveDashboardPage(link.id)} className={`flex items-center gap-4 p-3 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-white/10 text-white font-semibold' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}>
-                                {link.icon}<span>{link.text}</span>
-                            </button>
-                        )
+                            <button key={link.id} onClick={() => setActiveDashboardPage(link.id)} className={`flex items-center gap-4 p-3 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-white/10 text-white font-semibold' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}>{link.icon}<span>{link.text}</span></button>
+                        );
                     })}
                 </nav>
                 <div className="mt-auto pt-4 border-t border-white/20">
@@ -213,12 +185,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                         </button>
                         <AnimatePresence>
                         {isUserMenuOpen && (
-                            <motion.div 
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="absolute right-0 w-48 mt-2 origin-top-right bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                            >
+                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute right-0 w-48 mt-2 origin-top-right bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                                 <div className="py-1">
                                     <button onClick={() => { setActiveDashboardPage('tentang'); setIsUserMenuOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tentang</button>
                                     <button onClick={() => { setActiveDashboardPage('akun'); setIsUserMenuOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Akun</button>
@@ -231,13 +198,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                 </header>
                 <main className="flex-1 p-10 overflow-y-auto">
                     <AnimatePresence mode="wait">
-                        <motion.div 
-                            key={typeof activeDashboardPage === 'object' ? activeDashboardPage.destinationId : activeDashboardPage} 
-                            initial={{ opacity: 0, y: 15 }} 
-                            animate={{ opacity: 1, y: 0 }} 
-                            exit={{ opacity: 0, y: -15 }} 
-                            transition={{ duration: 0.2 }}
-                        >
+                        <motion.div key={typeof activeDashboardPage === 'object' ? activeDashboardPage.destinationId : activeDashboardPage} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.2 }}>
                             <PageContent />
                         </motion.div>
                     </AnimatePresence>
