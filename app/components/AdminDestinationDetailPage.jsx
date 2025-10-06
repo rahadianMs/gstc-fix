@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import AdminReviewCard from './AdminReviewCard'; // Impor komponen baru
+import AdminReviewCard from './AdminReviewCard';
 
 // Komponen Halaman Detail Destinasi untuk Admin/Konsultan
 export default function AdminDestinationDetailPage({ destinationId, supabase, setActiveDashboardPage }) {
@@ -9,79 +9,94 @@ export default function AdminDestinationDetailPage({ destinationId, supabase, se
     const [indicators, setIndicators] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Data sub-section dari dokumen GSTC
-    const subSections = {
-        'A': { 'A(a)': 'Struktur dan kerangka pengelolaan', 'A(b)': 'Pelibatan pemangku-kepentingan', 'A(c)': 'Mengelola tekanan dan perubahan' },
-        'B': { 'B(a)': 'Memberikan manfaat ekonomi lokal', 'B(b)': 'Kesejahteraan dan dampak sosial' },
-        'C': { 'C(a)': 'Pelindungan warisan budaya', 'C(b)': 'Mengunjungi situs budaya' },
-        'D': { 'D(a)': 'Konservasi warisan alam', 'D(b)': 'Pengelolaan sumberdaya', 'D(c)': 'Pengelolaan limbah dan emisi' }
-    };
-
     useEffect(() => {
         const fetchAllData = async () => {
+            if (!destinationId) return;
             setLoading(true);
 
             // 1. Ambil info profil destinasi
-            const { data: profileData } = await supabase
+            const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('destination_name, admin_province')
                 .eq('id', destinationId)
                 .single();
-            setDestination(profileData);
+            
+            if (profileError) console.error("Error fetching profile:", profileError);
+            else setDestination(profileData);
 
-            // 2. Ambil semua indikator DAN gabungkan (join) dengan bukti yang sudah disubmit oleh destinasi ini
-            const { data: indicatorData, error } = await supabase
-                .from('gstc_indicators')
+            // 2. Ambil SEMUA sub-indikator beserta relasi kriterianya
+            const { data: allIndicators, error: indicatorsError } = await supabase
+                .from('gstc_sub_indicators')
                 .select(`
                     *,
-                    compliance_evidence (
-                        id,
-                        status,
-                        evidence_link,
-                        consultant_comment
+                    gstc_criteria (
+                        criterion_code,
+                        sub_section_title
                     )
                 `)
-                .eq('compliance_evidence.destination_id', destinationId)
                 .order('id');
-            
-            if (indicatorData) {
-                // Proses data agar lebih mudah digunakan di UI
-                const processedData = indicatorData.map(ind => ({
-                    ...ind,
-                    evidence: ind.compliance_evidence[0] || null // Ambil bukti pertama (karena relasinya 1-to-1)
-                }));
-                setIndicators(processedData);
+
+            if (indicatorsError) {
+                console.error("Error fetching sub-indicators:", indicatorsError);
+                setLoading(false);
+                return;
             }
+
+            // 3. Ambil SEMUA bukti yang relevan untuk destinasi ini saja
+            const { data: evidenceData, error: evidenceError } = await supabase
+                .from('evidence_submissions')
+                .select('*')
+                .eq('destination_id', destinationId);
+            
+            if (evidenceError) {
+                console.error("Error fetching evidence:", evidenceError);
+                setLoading(false);
+                return;
+            }
+
+            // 4. Gabungkan kedua data tersebut di dalam kode
+            const evidenceMap = evidenceData.reduce((map, evidence) => {
+                map[evidence.sub_indicator_id] = evidence;
+                return map;
+            }, {});
+
+            const processedData = allIndicators.map(indicator => ({
+                ...indicator,
+                evidence: evidenceMap[indicator.id] || null
+            }));
+
+            setIndicators(processedData);
             setLoading(false);
         };
 
         fetchAllData();
     }, [destinationId, supabase]);
 
-    // Fungsi untuk update data di UI secara real-time setelah konsultan mereview
+    // Fungsi ini sudah benar dan akan bekerja dengan data baru
     const handleEvidenceUpdate = (updatedEvidence) => {
         setIndicators(prevIndicators => 
             prevIndicators.map(ind => 
-                ind.id === updatedEvidence.indicator_id 
+                ind.id === updatedEvidence.sub_indicator_id 
                 ? { ...ind, evidence: updatedEvidence } 
                 : ind
             )
         );
     };
 
-    if (loading) return <div>Memuat detail destinasi dan bukti kepatuhan...</div>;
+    if (loading) return <div className="text-center p-8">Memuat detail destinasi dan bukti kepatuhan...</div>;
 
-    // Helper untuk mengelompokkan indikator berdasarkan pilar
-    const indicatorsByPillar = (pillar) => indicators.filter(i => i.pillar === pillar);
+    const indicatorsByPillar = (pillar) => {
+        return indicators.filter(i => i.gstc_criteria?.criterion_code?.startsWith(pillar));
+    };
 
     return (
-        <div>
-            <button onClick={() => setActiveDashboardPage('beranda')} className="text-sm font-semibold text-emerald-600 mb-6 hover:underline">
+        <div className="max-w-4xl mx-auto">
+            <button onClick={() => setActiveDashboardPage('review-compliance')} className="text-sm font-semibold mb-6 hover:underline" style={{color: '#3f545f'}}>
                 &larr; Kembali ke Daftar Destinasi
             </button>
             <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold text-slate-800">{destination?.destination_name}</h1>
-                <p className="mt-2 text-lg text-slate-600">{destination?.admin_province}</p>
+                <h1 className="text-4xl font-bold text-slate-800">{destination?.destination_name || 'Nama Destinasi'}</h1>
+                <p className="mt-2 text-lg text-slate-600">{destination?.admin_province || 'Lokasi Belum Diatur'}</p>
             </div>
             
             <div className="space-y-12">
@@ -89,16 +104,20 @@ export default function AdminDestinationDetailPage({ destinationId, supabase, se
                     <section key={pillar}>
                         <h2 className="text-2xl font-bold text-slate-700 pb-2 mb-6 border-b-2">BAGIAN {pillar}</h2>
                         <div className="space-y-6">
-                            {indicatorsByPillar(pillar).map(indicator => (
-                                <AdminReviewCard
-                                    key={indicator.id}
-                                    indicator={indicator}
-                                    evidence={indicator.evidence}
-                                    subSectionTitle={"Contoh Sub-section"} // Placeholder, bisa dibuat lebih dinamis
-                                    onUpdate={handleEvidenceUpdate}
-                                    supabase={supabase}
-                                />
-                            ))}
+                            {indicatorsByPillar(pillar).length > 0 ? (
+                                indicatorsByPillar(pillar).map(indicator => (
+                                    <AdminReviewCard
+                                        key={indicator.id}
+                                        indicator={indicator}
+                                        evidence={indicator.evidence}
+                                        subSectionTitle={indicator.gstc_criteria.sub_section_title}
+                                        onUpdate={handleEvidenceUpdate}
+                                        supabase={supabase}
+                                    />
+                                ))
+                            ) : (
+                                <p className="text-center text-slate-500 py-8">Tidak ada indikator yang tersedia untuk pilar ini.</p>
+                            )}
                         </div>
                     </section>
                 ))}
