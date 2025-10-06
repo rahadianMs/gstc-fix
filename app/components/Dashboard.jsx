@@ -142,7 +142,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         <div id="app-wrapper" className="flex min-h-screen bg-slate-50">
             <aside 
                 className="fixed top-0 left-0 z-40 flex flex-col h-screen p-6 w-72 text-white"
-                style={{backgroundColor: '#22543d'}}
+                style={{backgroundColor: '#1c2120'}}
             >
                <div className="pb-6 mb-4 border-b border-white/20">
                     <h1 className="text-xl font-bold">GSTC Self Assistant</h1>
