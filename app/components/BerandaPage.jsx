@@ -61,8 +61,9 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
                     <div className="mt-4">
                         <button
                             onClick={() => setActiveDashboardPage('standard-compliance')}
-                            className="w-full py-3 text-base font-semibold text-brand-primary bg-brand-accent rounded-lg transition-transform hover:scale-105"
+                            className="w-full py-3 text-base font-semibold text-white bg-brand-primary rounded-lg transition-colors hover:bg-brand-secondary"
                         >
+                            <ShieldCheckIcon />
                             Lihat Standar Kepatuhan
                         </button>
                         <button onClick={() => setActiveDashboardPage('panduan')} className="w-full mt-3 text-sm font-medium text-slate-500 hover:text-brand-primary">
