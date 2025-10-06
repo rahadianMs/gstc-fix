@@ -12,9 +12,12 @@ const pillars = [
 const PillarCard = ({ letter, title, subtitle, onClick }) => (
     <button 
         onClick={onClick}
-        className="group flex flex-col items-center p-6 bg-white rounded-2xl shadow-sm border border-slate-200 hover:border-emerald-500 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2"
+        className="group flex flex-col items-center p-6 bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2"
+        style={{'--hover-color': '#3f545f', '--hover-border-color': '#e8c458'}}
     >
-        <div className="w-24 h-24 bg-slate-100 group-hover:bg-emerald-500 rounded-full flex items-center justify-center transition-colors duration-300">
+        <div 
+            className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center transition-colors duration-300 group-hover:bg-[var(--hover-color)]"
+        >
             <span className="text-4xl font-bold text-slate-500 group-hover:text-white">{letter}</span>
         </div>
         <h3 className="mt-4 text-lg font-bold text-slate-800 text-center">{title}</h3>
@@ -27,7 +30,7 @@ export default function StandardCompliancePage({ setActiveDashboardPage }) {
     return (
         <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold text-slate-800">Standar Kepatuhan GSTC</h1>
+                <h1 className="text-4xl font-bold text-slate-800">GSTC Standard Compliance</h1>
                 <p className="mt-2 text-lg text-slate-600">Pilih pilar untuk melihat detail indikator dan mengunggah bukti kepatuhan.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
