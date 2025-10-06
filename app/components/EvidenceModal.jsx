@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PencilIcon, CheckIcon, XMarkIcon } from './Icons'; // Pastikan ikon ini ada di Icons.jsx
+import { PencilIcon, CheckIcon, XMarkIcon } from './Icons';
 
-// --- Ikon Baru untuk Peringatan ---
 const AlertTriangleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
     </svg>
 );
 
-// --- Komponen Utama Modal ---
 export default function EvidenceModal({ isOpen, onClose, subIndicator, existingEvidence, user, supabase, onSave }) {
     const [links, setLinks] = useState([{ id: Date.now(), url: '' }]);
     const [loading, setLoading] = useState(false);
@@ -19,7 +17,6 @@ export default function EvidenceModal({ isOpen, onClose, subIndicator, existingE
     const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
     useEffect(() => {
-        // Jika ada bukti yang sudah ada, muat link-nya
         if (existingEvidence?.links && existingEvidence.links.length > 0) {
             setLinks(existingEvidence.links.map((url, i) => ({ id: Date.now() + i, url })));
         } else {
@@ -43,17 +40,19 @@ export default function EvidenceModal({ isOpen, onClose, subIndicator, existingE
         }
     };
     
-    // Fungsi untuk menangani SEMUA aksi simpan/update ke database
-    const handleSave = async (newStatus) => {
+    const handleSave = async (submissionType) => {
         setLoading(true);
         setMessage('');
 
         const finalLinks = links.filter(l => l.url.trim() !== '').map(l => l.url.trim());
 
-        // Tentukan status baru berdasarkan aksi dan jumlah link
-        let statusToSave = newStatus;
-        if (newStatus === 'In Progress' && finalLinks.length === 0) {
-            statusToSave = 'To Do'; // Kembali ke To Do jika draf kosong
+        // --- LOGIKA BARU UNTUK STATUS "REVISION" ---
+        let statusToSave = submissionType;
+        if (submissionType === 'In Review' && existingEvidence?.status === 'Rejected') {
+            statusToSave = 'Revision'; // Ubah menjadi Revision jika ini adalah re-submit
+        }
+        if (submissionType === 'In Progress' && finalLinks.length === 0) {
+            statusToSave = 'To Do';
         }
 
         const submissionData = {
@@ -73,8 +72,8 @@ export default function EvidenceModal({ isOpen, onClose, subIndicator, existingE
         if (error) {
             setMessage(`Error: ${error.message}`);
         } else {
-            onSave(data); // Kirim data terbaru ke parent
-            onClose();     // Tutup modal
+            onSave(data);
+            onClose();
         }
 
         setLoading(false);
@@ -126,7 +125,6 @@ export default function EvidenceModal({ isOpen, onClose, subIndicator, existingE
                         
                         {message && <p className="text-sm text-red-600 mt-2">{message}</p>}
 
-                        {/* --- KOTAK PERINGATAN KONFIRMASI --- */}
                         {showSubmitConfirm && (
                              <div className="mt-4 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
                                 <div className="flex items-start gap-3">
