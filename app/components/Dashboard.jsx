@@ -57,7 +57,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
     let sidebarLinks = [];
     if (userRole === 'consultant') {
         sidebarLinks = [
-            { id: 'beranda', text: 'Beranda', icon: <HomeIcon /> },
+            { id: 'home', text: 'Home', icon: <HomeIcon /> },
             { id: 'review-compliance', text: 'Review Compliance', icon: <DocumentChartBarIcon /> },
             { id: 'what-to-do', text: 'What To Do', icon: <ClipboardCheckIcon /> },
             { id: 'pembelajaran', text: 'Pembelajaran', icon: <AcademicCapIcon /> },
@@ -65,7 +65,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         ];
     } else {
         sidebarLinks = [
-            { id: 'beranda', text: 'Beranda', icon: <HomeIcon /> },
+            { id: 'home', text: 'Home', icon: <HomeIcon /> },
             { id: 'what-to-do', text: 'What To Do', icon: <ClipboardCheckIcon /> },
             { 
                 id: 'standard-compliance', text: 'Standard Compliance', icon: <ShieldCheckIcon />,
@@ -105,7 +105,6 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
 
         if (typeof activeDashboardPage === 'object' && activeDashboardPage !== null) {
             if (activeDashboardPage.page === 'admin-destination-detail') {
-                // --- PERBAIKAN DI SINI: Menambahkan prop 'user' ---
                 return <AdminDestinationDetailPage 
                     destinationId={activeDashboardPage.destinationId} 
                     supabase={supabase} 
@@ -121,7 +120,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         }
 
         switch (activeDashboardPage) {
-            case 'beranda':
+            case 'home':
                 return userRole === 'consultant' 
                     ? <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />
                     : <BerandaPage user={user} supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} dataVersion={dataVersion} />;

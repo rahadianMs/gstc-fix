@@ -38,22 +38,29 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
                     <BellIcon />
                 </button>
                 <div className="relative z-0">
-                    <h1 className="text-4xl font-extrabold drop-shadow-md">Selamat Datang, {profile?.destination_name || 'Rekan'}!</h1>
+                    {/* --- PERBAIKAN BUG VISUAL DI SINI --- */}
+                    {loading ? (
+                        // Tampilkan skeleton loader saat loading
+                        <div className="h-10 bg-white/20 rounded-md animate-pulse w-3/4 mb-2"></div>
+                    ) : (
+                        // Tampilkan teks setelah loading selesai
+                        <h1 className="text-4xl font-extrabold drop-shadow-md">Selamat Datang, {profile?.destination_name || 'Rekan'}!</h1>
+                    )}
                     <p className="mt-1 text-lg opacity-90 drop-shadow">Ini adalah pusat kendali Anda untuk menuju pariwisata berkelanjutan.</p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-brand-surface p-6 rounded-xl shadow-sm border">
-                        <h3 className="font-bold text-lg text-brand-primary">Progres Kepatuhan Standar</h3>
-                        <div className="mt-4 p-8 bg-brand-background rounded-lg text-center text-slate-500">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border">
+                        <h3 className="font-bold text-lg text-slate-800">Progres Kepatuhan Standar</h3>
+                        <div className="mt-4 p-8 bg-slate-50 rounded-lg text-center text-slate-500">
                            <p>Visualisasi progres poin dan status per pilar akan ditampilkan di sini.</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-brand-surface p-6 rounded-xl border shadow-sm flex flex-col justify-between">
+                <div className="bg-white p-6 rounded-xl border shadow-sm flex flex-col justify-between">
                      <div>
                         <h3 className="text-xl font-bold text-slate-800">Mulai Penuhi Standar</h3>
                         <p className="text-slate-500 mt-2">Pilih salah satu pilar untuk mulai mengunggah bukti kepatuhan Anda.</p>
@@ -61,12 +68,13 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
                     <div className="mt-4">
                         <button
                             onClick={() => setActiveDashboardPage('standard-compliance')}
-                            className="w-full py-3 text-base font-semibold text-white bg-brand-primary rounded-lg transition-colors hover:bg-brand-secondary"
+                            className="w-full py-3 text-base font-semibold text-white rounded-lg transition-colors"
+                            style={{backgroundColor: '#3f545f'}}
                         >
                             <ShieldCheckIcon />
                             Lihat Standar Kepatuhan
                         </button>
-                        <button onClick={() => setActiveDashboardPage('panduan')} className="w-full mt-3 text-sm font-medium text-slate-500 hover:text-brand-primary">
+                        <button onClick={() => setActiveDashboardPage('panduan')} className="w-full mt-3 text-sm font-medium text-slate-500 hover:text-emerald-700">
                             Baca Panduan Penggunaan
                         </button>
                     </div>

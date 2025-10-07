@@ -15,7 +15,7 @@ export default function HomePage() {
     const [session, setSession] = useState(null);
     const [activePage, setActivePage] = useState('landing');
     const [isLogin, setIsLogin] = useState(true);
-    const [activeDashboardPage, setActiveDashboardPage] = useState('beranda');
+    const [activeDashboardPage, setActiveDashboardPage] = useState('home'); // Diubah dari 'beranda'
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const userMenuRef = useRef(null);
     const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ export default function HomePage() {
             setSession(session);
             if (session) {
                 setActivePage('app');
-                setActiveDashboardPage('beranda');
+                setActiveDashboardPage('home'); // Diubah dari 'beranda'
             } else {
                 setActivePage('landing');
             }
