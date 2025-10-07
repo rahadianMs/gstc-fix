@@ -15,6 +15,7 @@ import AccountPage from './AccountPage';
 import FaqPage from './FaqPage';
 import PembelajaranPage from './PembelajaranPage';
 import PanduanPage from './PanduanPage';
+import SelfAssessmentPage from './SelfAssessmentPage'; // <-- 1. Impor komponen baru
 
 // Impor Ikon
 import {
@@ -74,6 +75,9 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                     { id: 'compliance-c', text: 'PILAR C' }, { id: 'compliance-d', text: 'PILAR D' },
                 ] 
             },
+            // --- LINK BARU DITAMBAHKAN DI SINI ---
+            { id: 'self-assessment', text: 'Self-Assessment', icon: <DocumentChartBarIcon /> },
+            // ------------------------------------
             { id: 'pembelajaran', text: 'Pembelajaran', icon: <AcademicCapIcon /> },
             { id: 'panduan', text: 'Panduan', icon: <QuestionMarkCircleIcon /> },
         ];
@@ -129,6 +133,12 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
             case 'standard-compliance':
                 return <StandardCompliancePage setActiveDashboardPage={setActiveDashboardPage} />;
             case 'what-to-do': return <NotificationPage />;
+            
+            // --- CASE BARU DITAMBAHKAN DI SINI ---
+            case 'self-assessment':
+                return <SelfAssessmentPage supabase={supabase} user={user} />;
+            // ------------------------------------
+
             case 'pembelajaran': return <PembelajaranPage />;
             case 'panduan': return <PanduanPage />;
             case 'tentang': return <AboutPage />;
