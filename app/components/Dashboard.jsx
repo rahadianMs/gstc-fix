@@ -105,7 +105,13 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
 
         if (typeof activeDashboardPage === 'object' && activeDashboardPage !== null) {
             if (activeDashboardPage.page === 'admin-destination-detail') {
-                return <AdminDestinationDetailPage destinationId={activeDashboardPage.destinationId} supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />;
+                // --- PERBAIKAN DI SINI: Menambahkan prop 'user' ---
+                return <AdminDestinationDetailPage 
+                    destinationId={activeDashboardPage.destinationId} 
+                    supabase={supabase} 
+                    setActiveDashboardPage={setActiveDashboardPage} 
+                    user={user} 
+                />;
             }
         }
         
@@ -117,7 +123,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         switch (activeDashboardPage) {
             case 'beranda':
                 return userRole === 'consultant' 
-                    ? <div className="text-center"><h1>Selamat Datang, Konsultan!</h1><p>Pilih "Review Kepatuhan" untuk memulai.</p></div> 
+                    ? <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />
                     : <BerandaPage user={user} supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} dataVersion={dataVersion} />;
             case 'review-compliance':
                 return <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />;

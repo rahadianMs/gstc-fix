@@ -39,7 +39,7 @@ export default function ReviewModal({ isOpen, onClose, evidence }) {
                             {isApproved ? <CheckCircleIcon /> : <XCircleIcon />}
                         </div>
                         <h3 className="text-xl font-bold text-slate-800">
-                            Status Bukti: {isApproved ? 'Disetujui' : 'Ditolak'}
+                            Status Bukti: {isApproved ? 'Done' : 'Rejected'}
                         </h3>
                     </header>
                     
