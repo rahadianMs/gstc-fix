@@ -50,24 +50,29 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
 
     const visual = PILLAR_VISUALS[pillar];
 
-    const groupedCriteria = criteria.reduce((acc, criterion) => {
-        const key = criterion.sub_section_title;
-        if (!acc[key]) acc[key] = { code: criterion.sub_section_code, criteria: [] };
-        acc[key].criteria.push(criterion);
-        return acc;
-    }, {});
-
+    // --- PERUBAHAN UTAMA DI SINI ---
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const { data } = await supabase
+            // Query sekarang mengambil semua data yang dibutuhkan sekaligus
+            const { data, error } = await supabase
                 .from('gstc_criteria')
-                .select('*, gstc_sub_indicators(id, evidence_submissions(status))')
+                .select(`
+                    *,
+                    gstc_sub_indicators (
+                        *,
+                        evidence_submissions ( status )
+                    )
+                `)
                 .eq('pillar', pillar)
-                .eq('gstc_sub_indicators.evidence_submissions.destination_id', user.id);
+                .eq('gstc_sub_indicators.evidence_submissions.destination_id', user.id)
+                .order('criterion_code');
             
-            if (data) {
+            if (error) {
+                console.error("Error fetching pillar details:", error);
+            } else if (data) {
                 setCriteria(data);
+                // Kalkulasi progres tetap sama
                 let total = 0, done = 0;
                 data.forEach(c => {
                     c.gstc_sub_indicators.forEach(s => {
@@ -81,6 +86,14 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
         };
         fetchData();
     }, [pillar, supabase, user.id]);
+    
+    // Mengelompokkan berdasarkan sub-seksi
+    const groupedCriteria = criteria.reduce((acc, criterion) => {
+        const key = criterion.sub_section_title;
+        if (!acc[key]) acc[key] = { code: criterion.sub_section_code, criteria: [] };
+        acc[key].criteria.push(criterion);
+        return acc;
+    }, {});
     
     const calculateProgress = (criteriaList) => {
         let total = 0, done = 0;
@@ -118,6 +131,7 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
                                     {data.criteria.map(criterion => (
                                         <CriterionAccordion 
                                             key={criterion.id} 
+                                            // Kirim objek 'criterion' yang sudah lengkap dengan sub-indikator
                                             criterion={criterion} 
                                             user={user} 
                                             supabase={supabase} 
