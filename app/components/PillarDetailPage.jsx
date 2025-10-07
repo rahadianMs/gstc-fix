@@ -4,19 +4,18 @@ import { useState, useEffect } from 'react';
 import CriterionAccordion from './CriterionAccordion';
 import { motion } from 'framer-motion';
 
-// Data baru untuk visualisasi header setiap pilar
 const PILLAR_VISUALS = {
     A: {
         title: 'Pengelolaan Berkelanjutan',
-        imageUrl: 'https://images.unsplash.com/photo-1542626991-cbc4e32524cc?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+        imageUrl: 'https://images.unsplash.com/photo-1542626991-cbc4e32524cc?q=80&w=1169&auto=format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
     },
     B: {
         title: 'Keberlanjutan Sosial-Ekonomi',
-        imageUrl: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+        imageUrl: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?q=80&w=1170&auto=format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
     },
     C: {
         title: 'Keberlanjutan Budaya',
-        imageUrl: 'https://images.unsplash.com/photo-1727341853917-08c9397af773?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+        imageUrl: 'https://images.unsplash.com/photo-1727341853917-08c9397af773?q=80&w=1171&auto=format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
     },
     D: {
         title: 'Keberlanjutan Lingkungan',
@@ -24,8 +23,6 @@ const PILLAR_VISUALS = {
     }
 };
 
-
-// Komponen Progress Bar
 const ProgressBar = ({ value, title }) => {
     return (
         <div>
