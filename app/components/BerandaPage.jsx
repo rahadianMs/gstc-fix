@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ShieldCheckIcon, QuestionMarkCircleIcon, BellIcon } from './Icons';
+import ComplianceProgress from './ComplianceProgress'; // <-- Impor komponen baru
 
 // Komponen Utama Halaman Beranda
 export default function BerandaPage({ user, supabase, setActiveDashboardPage, dataVersion }) {
@@ -38,44 +39,36 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
                     <BellIcon />
                 </button>
                 <div className="relative z-0">
-                    {/* --- PERBAIKAN BUG VISUAL DI SINI --- */}
                     {loading ? (
-                        // Tampilkan skeleton loader saat loading
                         <div className="h-10 bg-white/20 rounded-md animate-pulse w-3/4 mb-2"></div>
                     ) : (
-                        // Tampilkan teks setelah loading selesai
                         <h1 className="text-4xl font-extrabold drop-shadow-md">Selamat Datang, {profile?.destination_name || 'Rekan'}!</h1>
                     )}
                     <p className="mt-1 text-lg opacity-90 drop-shadow">Ini adalah pusat kendali Anda untuk menuju pariwisata berkelanjutan.</p>
                 </div>
             </div>
+            
+            {/* --- PERUBAHAN UTAMA DI SINI --- */}
+            <ComplianceProgress supabase={supabase} user={user} />
 
+            {/* Bagian Bantuan/Aksi Cepat (bisa dipertahankan jika perlu) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border">
-                        <h3 className="font-bold text-lg text-slate-800">Progres Kepatuhan Standar</h3>
-                        <div className="mt-4 p-8 bg-slate-50 rounded-lg text-center text-slate-500">
-                           <p>Visualisasi progres poin dan status per pilar akan ditampilkan di sini.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-xl border shadow-sm flex flex-col justify-between">
+                <div className="lg:col-span-3 bg-white p-6 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
                      <div>
                         <h3 className="text-xl font-bold text-slate-800">Mulai Penuhi Standar</h3>
-                        <p className="text-slate-500 mt-2">Pilih salah satu pilar untuk mulai mengunggah bukti kepatuhan Anda.</p>
+                        <p className="text-slate-500 mt-1">Pilih pilar untuk mulai mengunggah bukti kepatuhan Anda.</p>
                     </div>
-                    <div className="mt-4">
+                    <div className="flex-shrink-0 flex items-center gap-4">
+                        <button onClick={() => setActiveDashboardPage('panduan')} className="text-sm font-medium text-slate-500 hover:text-emerald-700">
+                            Baca Panduan
+                        </button>
                         <button
                             onClick={() => setActiveDashboardPage('standard-compliance')}
-                            className="w-full py-3 text-base font-semibold text-white rounded-lg transition-colors"
+                            className="w-full md:w-auto px-6 py-3 text-base font-semibold text-white rounded-lg transition-colors flex items-center gap-2"
                             style={{backgroundColor: '#3f545f'}}
                         >
                             <ShieldCheckIcon />
                             Lihat Standar Kepatuhan
-                        </button>
-                        <button onClick={() => setActiveDashboardPage('panduan')} className="w-full mt-3 text-sm font-medium text-slate-500 hover:text-emerald-700">
-                            Baca Panduan Penggunaan
                         </button>
                     </div>
                 </div>
