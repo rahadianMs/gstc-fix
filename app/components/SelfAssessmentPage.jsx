@@ -3,9 +3,24 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- Komponen-komponen ikon ---
+// --- Komponen Ikon ---
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 const TrendingUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
+
+// --- Komponen Grafik Batang ---
+const PillarChartBar = ({ pillarName, percentage, color }) => (
+    <div className="flex flex-col items-center h-full justify-end gap-2 text-center">
+        <div className="text-sm font-bold text-slate-700">{percentage.toFixed(0)}%</div>
+        <motion.div
+            className="w-10 md:w-12 rounded-t-md"
+            style={{ backgroundColor: color }}
+            initial={{ height: 0 }}
+            animate={{ height: `${percentage}%` }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+        />
+        <div className="text-xs font-semibold text-slate-500 leading-tight">{pillarName}</div>
+    </div>
+);
 
 // --- Komponen Utama ---
 export default function SelfAssessmentPage({ supabase, user }) {
@@ -18,30 +33,29 @@ export default function SelfAssessmentPage({ supabase, user }) {
     const [criteriaForPillar, setCriteriaForPillar] = useState([]);
     const [currentCriterionIndex, setCurrentCriterionIndex] = useState(0);
 
-    // --- Skema Warna Sesuai Tema ---
     const primaryColor = '#3f545f';
     const pillarConfig = {
         A: { name: 'Manajemen Berkelanjutan', color: '#F59E0B' },
-        B: { name: 'Keberlanjutan Sosial-Ekonomi', color: '#84CC16' },
-        C: { name: 'Keberlanjutan Budaya', color: '#3B82F6' },
-        D: { name: 'Keberlanjutan Lingkungan', color: '#10B981' }
+        B: { name: 'Sosial-Ekonomi', color: '#84CC16' },
+        C: { name: 'Budaya', color: '#3B82F6' },
+        D: { name: 'Lingkungan', color: '#10B981' }
     };
+    
+    const answerOptionStyles = [
+        { text: 'Belum tersedia', checked: 'bg-red-500 border-red-600 text-white', hover: 'hover:bg-red-100' },
+        { text: 'Dokumen ada, belum implementasi', checked: 'bg-orange-500 border-orange-600 text-white', hover: 'hover:bg-orange-100' },
+        { text: 'Diterapkan sebagian', checked: 'bg-yellow-400 border-yellow-500 text-white', hover: 'hover:bg-yellow-100' },
+        { text: 'Diterapkan penuh & konsisten', checked: 'bg-green-500 border-green-600 text-white', hover: 'hover:bg-green-100' }
+    ];
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const { data: questionsData, error: qError } = await supabase
-                .from('self_assessment_questions')
-                .select('*');
+            const { data: questionsData, error: qError } = await supabase.from('self_assessment_questions').select('*');
+            const { data: answersData, error: aError } = await supabase.from('self_assessment_answers').select('question_id, answer_score').eq('destination_id', user.id);
 
-            const { data: answersData, error: aError } = await supabase
-                .from('self_assessment_answers')
-                .select('question_id, answer_score')
-                .eq('destination_id', user.id);
-
-            if (qError || aError) {
-                console.error(qError || aError);
-            } else {
+            if (qError || aError) { console.error(qError || aError); } 
+            else {
                 setQuestions(questionsData);
                 const answersMap = answersData.reduce((acc, ans) => {
                     const question = questionsData.find(q => q.id === ans.question_id);
@@ -66,10 +80,8 @@ export default function SelfAssessmentPage({ supabase, user }) {
     const handleAnswerChange = async (questionId, score) => {
         const newAnswers = { ...answers, [questionId]: score };
         setAnswers(newAnswers);
-
         const question = questions.find(q => q.question_id === questionId);
         if(!question) return;
-
         await supabase.from('self_assessment_answers').upsert(
             { destination_id: user.id, question_id: question.id, answer_score: score },
             { onConflict: 'destination_id, question_id' }
@@ -105,8 +117,12 @@ export default function SelfAssessmentPage({ supabase, user }) {
         let totalActualScore = 0;
 
         for (const pillar of Object.keys(scores)) {
-            const maxScore = answeredCounts[pillar] * 2;
-            percentages[pillar] = maxScore > 0 ? (scores[pillar] / maxScore) * 100 : 0;
+            // --- PERBAIKAN LOGIKA SKOR DI SINI ---
+            // Pembagi sekarang adalah total pertanyaan di pilar tersebut dikali skor maksimal (2)
+            const maxScoreForPillar = totals[pillar] * 2;
+            percentages[pillar] = maxScoreForPillar > 0 ? (scores[pillar] / maxScoreForPillar) * 100 : 0;
+            // --- END PERBAIKAN ---
+
             totalAnswered += answeredCounts[pillar];
             totalPossibleScore += totals[pillar] * 2;
             totalActualScore += scores[pillar];
@@ -128,6 +144,8 @@ export default function SelfAssessmentPage({ supabase, user }) {
 
     const { percentages, answeredCounts, totals, overallPercentage, priority } = calculateScores();
 
+    // ... sisa kode untuk renderMainDashboard dan renderAssessmentView tidak berubah ...
+    // (Kode di bawah ini sama persis seperti sebelumnya)
     const renderMainDashboard = () => (
         <div className="container mx-auto px-4 md:px-8 max-w-7xl py-8">
             <header className="py-10 text-center">
@@ -140,12 +158,14 @@ export default function SelfAssessmentPage({ supabase, user }) {
             <section className="mb-12 bg-white p-6 md:p-8 rounded-2xl shadow-md grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
                  <div className="lg:col-span-3">
                     <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Skor Kepatuhan per Pilar</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="h-64 flex items-end justify-around gap-4 px-4">
                         {Object.keys(pillarConfig).map(p => (
-                            <div key={p} className="text-center p-4 rounded-lg bg-slate-50">
-                                <p className="font-extrabold text-4xl" style={{color: pillarConfig[p].color}}>{percentages[p].toFixed(0)}%</p>
-                                <p className="text-xs font-semibold text-slate-600 mt-1">{pillarConfig[p].name}</p>
-                            </div>
+                            <PillarChartBar 
+                                key={p}
+                                pillarName={pillarConfig[p].name}
+                                percentage={percentages[p]}
+                                color={pillarConfig[p].color}
+                            />
                         ))}
                     </div>
                  </div>
@@ -230,17 +250,11 @@ export default function SelfAssessmentPage({ supabase, user }) {
                                 <p className="font-semibold text-gray-800 text-lg">{q.question_text}</p>
                                 <p className="text-sm text-gray-500 mt-2 italic"><strong className="font-semibold">Rekomendasi:</strong> {q.recommendation}</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-                                    {['Belum tersedia', 'Dokumen ada, belum implementasi', 'Diterapkan sebagian', 'Diterapkan penuh & konsisten'].map((text, i) => (
+                                    {answerOptionStyles.map((opt, i) => (
                                         <div key={i} className="flex-1">
                                             <input type="radio" name={`q-${q.question_id}`} value={i} id={`q-${q.question_id}-${i}`} className="sr-only peer" checked={answers[q.question_id] === i} onChange={() => handleAnswerChange(q.question_id, i)} />
-                                            <label htmlFor={`q-${q.question_id}-${i}`} className="flex flex-col items-center justify-center text-center h-full cursor-pointer p-3 text-gray-700 border rounded-lg hover:bg-slate-100 transition-colors"
-                                                style={{
-                                                    backgroundColor: answers[q.question_id] === i ? config.color : 'white',
-                                                    color: answers[q.question_id] === i ? 'white' : 'inherit',
-                                                    borderColor: answers[q.question_id] === i ? config.color : '#E5E7EB'
-                                                }}
-                                            >
-                                                <span className="text-sm font-medium">{text}</span>
+                                            <label htmlFor={`q-${q.question_id}-${i}`} className={`flex flex-col items-center justify-center text-center h-full cursor-pointer p-3 text-gray-700 border rounded-lg transition-colors duration-200 ${answers[q.question_id] === i ? opt.checked : `bg-white ${opt.hover}`}`}>
+                                                <span className="text-sm font-medium">{opt.text}</span>
                                             </label>
                                         </div>
                                     ))}
@@ -253,7 +267,7 @@ export default function SelfAssessmentPage({ supabase, user }) {
                         {currentCriterionIndex > 0 ? (
                             <button onClick={() => navigateCriterion(-1)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-8 rounded-xl transition-all duration-200">Kembali</button>
                         ) : (
-                            <div></div> // Placeholder untuk menjaga layout
+                            <div></div>
                         )}
                         <span className="text-sm text-gray-500 font-medium">Kriteria {currentCriterionIndex + 1} dari {criteriaForPillar.length}</span>
                         <button onClick={() => navigateCriterion(1)} className="active:scale-95 transition-all duration-200 text-white font-bold py-3 px-8 rounded-xl shadow-md hover:opacity-90" style={{backgroundColor: primaryColor}}>
@@ -271,13 +285,7 @@ export default function SelfAssessmentPage({ supabase, user }) {
 
     return (
         <AnimatePresence mode="wait">
-            <motion.div
-                key={view}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2 }}
-            >
+            <motion.div key={view} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.2 }}>
                 {view === 'main' ? renderMainDashboard() : renderAssessmentView()}
             </motion.div>
         </AnimatePresence>
