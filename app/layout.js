@@ -3,8 +3,8 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata = {
-  title: "Indonesia Tourism Carbon Track & Reporting",
-  description: "National Online Single Portal (OSP) for Carbon Reporting",
+  title: "WSC Certification Assistance",
+  description: "Sustainability Portal: Your Gateway to GSTC Certification",
 };
 
 export default function RootLayout({ children }) {

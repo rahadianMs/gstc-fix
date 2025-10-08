@@ -9,7 +9,8 @@ const ProgressBar = ({ step, totalSteps }) => {
     return (
         <div className="w-full bg-slate-200 rounded-full h-2.5 mb-8">
             <motion.div
-                className="bg-[#22543d] h-2.5 rounded-full"
+                className="h-2.5 rounded-full"
+                style={{ backgroundColor: '#e8c458' }} // Warna kuning
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -33,8 +34,8 @@ const RegistrationSuccess = ({ onContinue }) => (
         </p>
         <button
             onClick={onContinue}
-            style={{ backgroundColor: '#22543d' }}
-            className="w-full py-3 font-semibold text-white rounded-lg hover:bg-[#1c4532]"
+            style={{ backgroundColor: '#e8c458' }} // Warna kuning
+            className="w-full py-3 font-semibold text-white rounded-lg hover:opacity-90"
         >
             Lanjutkan ke Login
         </button>
@@ -93,8 +94,8 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
     
     // Palet Warna
     const colors = {
-        brand: '#22543d',
-        brandHover: '#1c4532',
+        brand: '#e8c458', // Warna kuning
+        brandHover: '#d4b350',
     };
 
     const handleChange = (e) => {
@@ -150,9 +151,7 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
         setStep(prev => prev - 1);
     };
     
-    // --- FUNGSI AUTH DIPERBARUI UNTUK MENANGANI SUBMIT SECARA EKSPLISIT ---
     const handleAuthAction = async (e) => {
-        // Mencegah default submit jika event diberikan (dari form login)
         if (e) e.preventDefault();
         
         setLoading(true);
@@ -162,7 +161,6 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
             const { error } = await supabase.auth.signInWithPassword({ email: formData.email, password: formData.password });
             if (error) setMessage({ type: 'error', content: error.message });
         } else {
-            // Proses final registrasi
             const { data: { user }, error: signUpError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
@@ -203,7 +201,6 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
         setFormData({ ...formData, password: '' });
     };
     const renderRegisterForm = () => {
-        // --- Input number sekarang memiliki min="0" ---
         switch (step) {
             case 1:
                 return (
@@ -212,23 +209,23 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                         <div className="space-y-4">
                             <div>
                                 <label className="block mb-1 text-sm font-medium text-zinc-600">Email *</label>
-                                <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#22543d]" />
+                                <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e8c458]" />
                             </div>
                              <div>
                                 <label className="block mb-1 text-sm font-medium text-zinc-600">Password *</label>
-                                <input type="password" name="password" placeholder="Minimal 6 karakter" value={formData.password} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#22543d]" />
+                                <input type="password" name="password" placeholder="Minimal 6 karakter" value={formData.password} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e8c458]" />
                             </div>
                             <div>
                                 <label className="block mb-1 text-sm font-medium text-zinc-600">Nama Destinasi Wisata *</label>
-                                <input type="text" name="destination_name" value={formData.destination_name} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#22543d]" />
+                                <input type="text" name="destination_name" value={formData.destination_name} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e8c458]" />
                             </div>
                             <div>
                                 <label className="block mb-1 text-sm font-medium text-zinc-600">Nama Lembaga/Organisasi Pengelola *</label>
-                                <input type="text" name="managing_organization_name" value={formData.managing_organization_name} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#22543d]" />
+                                <input type="text" name="managing_organization_name" value={formData.managing_organization_name} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e8c458]" />
                             </div>
                             <div>
                                 <label className="block mb-1 text-sm font-medium text-zinc-600">Tipe Organisasi *</label>
-                                <select name="organization_type" value={formData.organization_type} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#22543d]">
+                                <select name="organization_type" value={formData.organization_type} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e8c458]">
                                     <option value="">Pilih Tipe</option>
                                     <option>Dinas Pariwisata Kabupaten/Kota/Provinsi</option>
                                     <option>Badan Otorita Kawasan Pariwisata</option>
@@ -248,7 +245,7 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                             )}
                             <div>
                                 <label className="block mb-1 text-sm font-medium text-zinc-600">Area Manajemen *</label>
-                                 <select name="management_area" value={formData.management_area} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#22543d]">
+                                 <select name="management_area" value={formData.management_area} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e8c458]">
                                     <option value="">Pilih Area</option>
                                     <option>Negara</option>
                                     <option>Provinsi</option>
@@ -445,18 +442,17 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                                     <form onSubmit={handleAuthAction} className="space-y-5">
                                         <div>
                                             <label className="block mb-1 text-sm font-medium text-zinc-600">Email</label>
-                                            <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-4 py-3 border rounded-lg"/>
+                                            <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e8c458]"/>
                                         </div>
                                         <div>
                                             <label className="block mb-1 text-sm font-medium text-zinc-600">Password</label>
-                                            <input type="password" name="password" value={formData.password} onChange={handleChange} required className="w-full px-4 py-3 border rounded-lg"/>
+                                            <input type="password" name="password" value={formData.password} onChange={handleChange} required className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e8c458]"/>
                                         </div>
-                                        <button type="submit" disabled={loading} style={{backgroundColor: colors.brand}} className="w-full py-3 font-semibold text-white rounded-lg hover:bg-[#1c4532] disabled:bg-slate-400">
+                                        <button type="submit" disabled={loading} style={{backgroundColor: colors.brand}} className="w-full py-3 font-semibold text-white rounded-lg hover:bg-[#d4b350] disabled:bg-slate-400">
                                             {loading ? 'Memproses...' : 'Masuk'}
                                         </button>
                                     </form>
                                 ) : (
-                                    // --- PERUBAHAN UTAMA: FORM DIBUNGKUS DALAM DIV, BUKAN <form> ---
                                     <div>
                                         <ProgressBar step={step} totalSteps={4} />
                                         <div className="max-h-[60vh] overflow-y-auto pr-4 -mr-4">
@@ -469,11 +465,11 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                                                 </button>
                                             ) : <div></div>}
                                             {step < 4 ? (
-                                                <button type="button" onClick={handleNextStep} disabled={loading} style={{backgroundColor: colors.brand}} className="px-6 py-2 font-semibold text-white rounded-lg hover:bg-[#1c4532] disabled:opacity-50">
+                                                <button type="button" onClick={handleNextStep} disabled={loading} style={{backgroundColor: colors.brand}} className="px-6 py-2 font-semibold text-white rounded-lg hover:bg-[#d4b350] disabled:opacity-50">
                                                     {loading ? 'Memeriksa...' : 'Lanjutkan'}
                                                 </button>
                                             ) : (
-                                                <button type="button" onClick={() => handleAuthAction()} disabled={loading} style={{backgroundColor: colors.brand}} className="w-full md:w-auto px-6 py-2 font-semibold text-white rounded-lg hover:bg-[#1c4532] disabled:bg-slate-400">
+                                                <button type="button" onClick={() => handleAuthAction()} disabled={loading} style={{backgroundColor: colors.brand}} className="w-full md:w-auto px-6 py-2 font-semibold text-white rounded-lg hover:bg-[#d4b350] disabled:bg-slate-400">
                                                     {loading ? 'Mendaftarkan...' : 'Selesaikan Pendaftaran'}
                                                 </button>
                                             )}
@@ -499,4 +495,4 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
             </motion.div>
         </div>
     );
-} 
+}
