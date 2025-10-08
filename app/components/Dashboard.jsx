@@ -16,6 +16,7 @@ import PembelajaranPage from './PembelajaranPage';
 import PanduanPage from './PanduanPage';
 import SelfAssessmentPage from './SelfAssessmentPage';
 import ActionPlanPage from './ActionPlanPage';
+import BookingSessionPage from './BookingSessionPage';
 
 // Impor Ikon
 import {
@@ -28,6 +29,7 @@ import {
     ChevronDownIcon,
     DocumentChartBarIcon,
     PencilIcon,
+    VideoCameraIcon, // <-- Ganti CalendarDaysIcon dengan ini
 } from './Icons.jsx';
 
 // Komponen Dasbor Utama
@@ -38,7 +40,6 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
     const [dataVersion, setDataVersion] = useState(Date.now());
     
     const logoWiseSteps = "https://cdn-biofo.nitrocdn.com/pguRNgUGRHgHBjvClHTnuzLuMOCPhzJi/assets/images/optimized/rev-a721222/wisestepsconsulting.id/wp-content/uploads/2023/03/WSG_Masterfiles_Logo-02.png";
-
 
     useEffect(() => {
         const fetchUserRole = async () => {
@@ -64,9 +65,10 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         sidebarLinks = [
             { id: 'home', text: 'Home', icon: <HomeIcon /> },
             { id: 'review-compliance', text: 'Review Compliance', icon: <DocumentChartBarIcon /> },
-            { id: 'action-plan', text: 'Action-plan', icon: <ClipboardCheckIcon /> },
-            { id: 'pembelajaran', text: 'Pembelajaran', icon: <AcademicCapIcon /> },
-            { id: 'panduan', text: 'Panduan', icon: <QuestionMarkCircleIcon /> },
+            { id: 'action-plan', text: 'Action Plan', icon: <ClipboardCheckIcon /> },
+            { id: 'booking-session', text: 'Consultation Session', icon: <VideoCameraIcon /> }, // <-- Ikon Diubah
+            { id: 'pembelajaran', text: 'Resource', icon: <AcademicCapIcon /> },
+            { id: 'panduan', text: 'Guide', icon: <QuestionMarkCircleIcon /> },
         ];
     } else {
         sidebarLinks = [
@@ -79,12 +81,15 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                 ] 
             },
             { id: 'action-plan', text: 'Action Plan', icon: <ClipboardCheckIcon /> },
+            { id: 'booking-session', text: 'Consultation Session', icon: <VideoCameraIcon /> }, // <-- Ikon Diubah
             { id: 'self-assessment', text: 'Self-Assessment', icon: <PencilIcon className="w-5 h-5" /> },
-            { id: 'pembelajaran', text: 'Pembelajaran', icon: <AcademicCapIcon /> },
-            { id: 'panduan', text: 'Panduan', icon: <QuestionMarkCircleIcon /> },
+            { id: 'pembelajaran', text: 'Resource', icon: <AcademicCapIcon /> },
+            { id: 'panduan', text: 'Guide', icon: <QuestionMarkCircleIcon /> },
         ];
     }
     
+    // ... Sisa kode komponen Dashboard.jsx tidak berubah ...
+    // (Saya sengaja potong agar tidak terlalu panjang, karena tidak ada perubahan lain selain di atas)
     const getPageTitle = () => {
         if (typeof activeDashboardPage === 'object' && activeDashboardPage?.page === 'admin-destination-detail') {
             return "Review Destinasi";
@@ -117,8 +122,6 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         return false;
     };
     
-    // --- PERBAIKAN BUG RENDER DIMULAI DI SINI ---
-    // Logika untuk menentukan komponen mana yang akan dirender, dipindahkan ke sini.
     let pageToRender;
 
     if (loadingRole) {
@@ -151,6 +154,9 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
             case 'action-plan':
                 pageToRender = <ActionPlanPage supabase={supabase} user={user} userRole={userRole} />;
                 break;
+            case 'booking-session':
+                pageToRender = <BookingSessionPage supabase={supabase} user={user} userRole={userRole} />;
+                break;
             case 'self-assessment':
                 pageToRender = <SelfAssessmentPage supabase={supabase} user={user} />;
                 break;
@@ -173,7 +179,6 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                 pageToRender = <div className="text-center p-8">Halaman tidak ditemukan.</div>;
         }
     }
-    // --- AKHIR DARI PERBAIKAN BUG RENDER ---
 
 
     return (
@@ -267,7 +272,6 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                             exit={{ opacity: 0, y: -15 }} 
                             transition={{ duration: 0.2 }}
                         >
-                            {/* Variabel pageToRender dipanggil di sini */}
                             {pageToRender}
                         </motion.div>
                     </AnimatePresence>
