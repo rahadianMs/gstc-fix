@@ -18,14 +18,38 @@ const ProgressBar = ({ step, totalSteps }) => {
     );
 };
 
+// Komponen untuk tampilan sukses
+const RegistrationSuccess = ({ onContinue }) => (
+    <motion.div
+        key="success"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="text-center"
+    >
+        <h3 className="text-2xl font-bold text-green-600 mb-4">Registrasi Berhasil!</h3>
+        <p className="text-slate-600 mb-6">
+            Satu langkah terakhir! Kami telah mengirimkan email verifikasi ke alamat Anda. Silakan klik tautan di dalamnya untuk mengaktifkan akun Anda.
+        </p>
+        <button
+            onClick={onContinue}
+            style={{ backgroundColor: '#22543d' }}
+            className="w-full py-3 font-semibold text-white rounded-lg hover:bg-[#1c4532]"
+        >
+            Lanjutkan ke Login
+        </button>
+    </motion.div>
+);
+
 
 // Komponen utama AuthPage
 export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin }) {
     // State untuk UI
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', content: '' });
-    const [step, setStep] = useState(1); // Mengatur langkah registrasi
+    const [step, setStep] = useState(1);
     const [isExiting, setIsExiting] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     // State untuk semua data form
     const [formData, setFormData] = useState({
@@ -73,7 +97,6 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
         brandHover: '#1c4532',
     };
 
-    // Handler untuk perubahan input form
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         if (type === 'checkbox') {
@@ -88,18 +111,38 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
         }
     };
     
-    // Fungsi untuk kembali ke halaman landing
     const handleGoBackToLanding = () => {
         setIsExiting(true);
     };
 
-    const handleNextStep = () => {
-        // Validasi sederhana sebelum lanjut
-        if (step === 1 && (!formData.destination_name || !formData.managing_organization_name || !formData.organization_type || !formData.management_area)) {
-             setMessage({ type: 'error', content: 'Harap lengkapi semua kolom yang ditandai *.' });
-             return;
-        }
+    const handleNextStep = async () => {
         setMessage({ type: '', content: '' });
+
+        if (step === 1) {
+            if (!formData.email || !formData.password || !formData.destination_name || !formData.managing_organization_name || !formData.organization_type || !formData.management_area) {
+                setMessage({ type: 'error', content: 'Harap lengkapi semua kolom yang ditandai *.' });
+                return;
+            }
+            if (formData.password.length < 6) {
+                setMessage({ type: 'error', content: 'Password minimal harus 6 karakter.' });
+                return;
+            }
+
+            setLoading(true);
+            const { data, error } = await supabase.rpc('check_user_exists', { p_email: formData.email });
+            setLoading(false);
+
+            if (error) {
+                setMessage({ type: 'error', content: `Gagal memvalidasi email: ${error.message}` });
+                return;
+            }
+
+            if (data) {
+                setMessage({ type: 'error', content: 'Email ini sudah terdaftar. Silakan gunakan email lain atau login.' });
+                return;
+            }
+        }
+        
         setStep(prev => prev + 1);
     };
     
@@ -107,59 +150,60 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
         setStep(prev => prev - 1);
     };
     
-    // Fungsi untuk handle Login dan Registrasi
+    // --- FUNGSI AUTH DIPERBARUI UNTUK MENANGANI SUBMIT SECARA EKSPLISIT ---
     const handleAuthAction = async (e) => {
-        e.preventDefault();
+        // Mencegah default submit jika event diberikan (dari form login)
+        if (e) e.preventDefault();
+        
         setLoading(true);
         setMessage({ type: '', content: '' });
 
         if (isLogin) {
-            // Logika Login
             const { error } = await supabase.auth.signInWithPassword({ email: formData.email, password: formData.password });
-            if (error) {
-                setMessage({ type: 'error', content: error.message });
-            }
+            if (error) setMessage({ type: 'error', content: error.message });
         } else {
-            // Logika Registrasi - terjadi di akhir
+            // Proses final registrasi
             const { data: { user }, error: signUpError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
-                options: {
-                    data: {
-                        destination_name: formData.destination_name
-                    }
-                }
+                options: { data: { destination_name: formData.destination_name } }
             });
 
             if (signUpError) {
-                setMessage({ type: 'error', content: signUpError.message });
+                if (signUpError.message.includes("User already registered")) {
+                    setMessage({ type: 'error', content: 'Email ini sudah terdaftar. Silakan gunakan email lain atau login.' });
+                } else {
+                    setMessage({ type: 'error', content: signUpError.message });
+                }
                 setLoading(false);
                 return;
             }
 
             if (user) {
-                // Hapus email dan password dari data yang akan diupdate ke profil
                 const profileData = { ...formData };
                 delete profileData.email;
                 delete profileData.password;
                 
-                const { error: updateError } = await supabase
-                    .from('profiles')
-                    .update(profileData)
-                    .eq('id', user.id);
+                const { error: updateError } = await supabase.from('profiles').update(profileData).eq('id', user.id);
                 
                 if (updateError) {
                      setMessage({ type: 'error', content: `Gagal menyimpan detail profil: ${updateError.message}` });
                 } else {
-                     setMessage({ type: 'success', content: 'Registrasi berhasil! Silakan cek email Anda untuk verifikasi.' });
+                     setShowSuccess(true);
                 }
             }
         }
         setLoading(false);
     };
-    
 
+    const handleContinueToLogin = () => {
+        setShowSuccess(false);
+        setIsLogin(true);
+        setStep(1);
+        setFormData({ ...formData, password: '' });
+    };
     const renderRegisterForm = () => {
+        // --- Input number sekarang memiliki min="0" ---
         switch (step) {
             case 1:
                 return (
@@ -224,26 +268,139 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                     <div>
                         <h3 className="text-xl font-semibold mb-4 text-slate-700">Section 2: Profil Destinasi</h3>
                         <div className="space-y-4">
-                           {/* Tambahkan semua input untuk Section 2 di sini */}
-                            <p className='text-center p-4 bg-slate-100 rounded-lg'>Form untuk Section 2 akan ditambahkan di sini...</p>
+                            <div className="grid md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-zinc-600">Provinsi</label>
+                                    <input type="text" name="admin_province" value={formData.admin_province} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-zinc-600">Kabupaten/Kota</label>
+                                    <input type="text" name="admin_regency" value={formData.admin_regency} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                </div>
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-zinc-600">Kecamatan</label>
+                                    <input type="text" name="admin_district" value={formData.admin_district} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                </div>
+                            </div>
+                             <div>
+                                <label className="block mb-1 text-sm font-medium text-zinc-600">Luas Area Destinasi (km²)</label>
+                                <input type="number" min="0" name="destination_area_size" value={formData.destination_area_size} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                            </div>
+                            <fieldset>
+                                <legend className="block mb-2 text-sm font-medium text-zinc-600">Batas Wilayah</legend>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <input type="text" name="boundary_north" placeholder="Utara" value={formData.boundary_north} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                    <input type="text" name="boundary_south" placeholder="Selatan" value={formData.boundary_south} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                    <input type="text" name="boundary_east" placeholder="Timur" value={formData.boundary_east} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                    <input type="text" name="boundary_west" placeholder="Barat" value={formData.boundary_west} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                </div>
+                            </fieldset>
+                             <div className="grid md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block mb-1 text-sm font-medium text-zinc-600">Jumlah Desa/Kelurahan</label>
+                                    <input type="number" min="0" name="village_count" value={formData.village_count} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                </div>
+                                 <div>
+                                    <label className="block mb-1 text-sm font-medium text-zinc-600">Jumlah Populasi</label>
+                                    <input type="number" min="0" name="population_count" value={formData.population_count} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                </div>
+                                 <div>
+                                    <label className="block mb-1 text-sm font-medium text-zinc-600">Jumlah Pengunjung (tahun lalu)</label>
+                                    <input type="number" min="0" name="visitor_count_last_year" value={formData.visitor_count_last_year} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );
             case 3:
                 return (
                      <div>
-                        <h3 className="text-xl font-semibold mb-4 text-slate-700">Section 3: Risk Screening Awal</h3>
-                        <div className="space-y-4">
-                            <p className='text-center p-4 bg-slate-100 rounded-lg'>Form untuk Section 3 akan ditambahkan di sini...</p>
+                        <h3 className="text-xl font-semibold mb-4 text-slate-700">Section 3: Inventarisasi dan Status Area</h3>
+                        <div className="space-y-6">
+                             <div>
+                                <label className="block mb-1 text-sm font-medium text-zinc-600">Tipe Atraksi Utama</label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                    {['Alam', 'Budaya', 'Buatan', 'Event', 'Kuliner', 'Wellness'].map(type => (
+                                        <label key={type} className="flex items-center space-x-2">
+                                            <input type="checkbox" name="main_attraction_types" value={type} checked={formData.main_attraction_types.includes(type)} onChange={handleChange} />
+                                            <span>{type}</span>
+                                        </label>
+                                    ))}
+                                    <label className="flex items-center space-x-2">
+                                        <input type="checkbox" name="main_attraction_types" value="other" checked={formData.main_attraction_types.includes('other')} onChange={handleChange} />
+                                        <span>Lainnya</span>
+                                    </label>
+                                </div>
+                                {formData.main_attraction_types.includes('other') && <input type="text" name="other_main_attraction_type" placeholder="Sebutkan tipe atraksi lain" value={formData.other_main_attraction_type} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg mt-2" />}
+                            </div>
+                            <div className="grid md:grid-cols-3 gap-4">
+                                <div><label className="block text-sm font-medium text-zinc-600">Jumlah Hotel</label><input type="number" min="0" name="hotel_count" value={formData.hotel_count} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/></div>
+                                <div><label className="block text-sm font-medium text-zinc-600">Jumlah Homestay</label><input type="number" min="0" name="homestay_count" value={formData.homestay_count} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/></div>
+                                <div><label className="block text-sm font-medium text-zinc-600">Jumlah Restoran</label><input type="number" min="0" name="restaurant_count" value={formData.restaurant_count} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/></div>
+                                <div><label className="block text-sm font-medium text-zinc-600">Jumlah Tour Operator</label><input type="number" min="0" name="tour_operator_count" value={formData.tour_operator_count} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/></div>
+                                <div><label className="block text-sm font-medium text-zinc-600">Jumlah UMKM</label><input type="number" min="0" name="sme_count" value={formData.sme_count} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/></div>
+                                <div><label className="block text-sm font-medium text-zinc-600">Jumlah Entitas Tersertifikasi</label><input type="number" min="0" name="certified_entity_count" value={formData.certified_entity_count} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/></div>
+                            </div>
+                            <div>
+                                <label className="block mb-1 text-sm font-medium text-zinc-600">Sertifikasi yang Pernah Diikuti</label>
+                                <input type="text" name="followed_certifications" value={formData.followed_certifications} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                            </div>
                         </div>
                     </div>
                 );
             case 4:
                 return (
                      <div>
-                        <h3 className="text-xl font-semibold mb-4 text-slate-700">Section 4: Praktik Keberlanjutan</h3>
-                        <div className="space-y-4">
-                           <p className='text-center p-4 bg-slate-100 rounded-lg'>Form untuk Section 4 akan ditambahkan di sini...</p>
+                        <h3 className="text-xl font-semibold mb-4 text-slate-700">Section 4: Isu Keberlanjutan</h3>
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block mb-1 text-sm font-medium text-zinc-600">Status Kawasan Khusus</label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                    {['Taman Nasional', 'Cagar Biosfer', 'Geopark', 'Kawasan Konservasi', 'Situs Warisan Dunia UNESCO'].map(type => (
+                                        <label key={type} className="flex items-center space-x-2">
+                                            <input type="checkbox" name="special_area_status" value={type} checked={formData.special_area_status.includes(type)} onChange={handleChange} />
+                                            <span>{type}</span>
+                                        </label>
+                                    ))}
+                                    <label className="flex items-center space-x-2">
+                                        <input type="checkbox" name="special_area_status" value="other" checked={formData.special_area_status.includes('other')} onChange={handleChange} />
+                                        <span>Lainnya</span>
+                                    </label>
+                                </div>
+                                {formData.special_area_status.includes('other') && <input type="text" name="other_special_area_status" placeholder="Sebutkan status lain" value={formData.other_special_area_status} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg mt-2" />}
+                            </div>
+                             <div>
+                                <label className="block mb-1 text-sm font-medium text-zinc-600">Risiko Bencana Alam</label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                    {['Banjir', 'Tanah Longsor', 'Gempa Bumi', 'Tsunami', 'Kekeringan', 'Letusan Gunung Api'].map(type => (
+                                        <label key={type} className="flex items-center space-x-2">
+                                            <input type="checkbox" name="natural_disaster_risks" value={type} checked={formData.natural_disaster_risks.includes(type)} onChange={handleChange} />
+                                            <span>{type}</span>
+                                        </label>
+                                    ))}
+                                     <label className="flex items-center space-x-2">
+                                        <input type="checkbox" name="natural_disaster_risks" value="other" checked={formData.natural_disaster_risks.includes('other')} onChange={handleChange} />
+                                        <span>Lainnya</span>
+                                    </label>
+                                </div>
+                                 {formData.natural_disaster_risks.includes('other') && <input type="text" name="other_natural_disaster_risk" placeholder="Sebutkan risiko lain" value={formData.other_natural_disaster_risk} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg mt-2" />}
+                            </div>
+                            <div>
+                                <label className="block mb-1 text-sm font-medium text-zinc-600">Situs Sensitif (Alam/Budaya)</label>
+                                <textarea name="sensitive_sites" value={formData.sensitive_sites} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" rows="2"></textarea>
+                            </div>
+                            <div>
+                                <label className="block mb-1 text-sm font-medium text-zinc-600">Situs Keagamaan</label>
+                                <textarea name="religious_sites" value={formData.religious_sites} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" rows="2"></textarea>
+                            </div>
+                             <div>
+                                <label className="block mb-1 text-sm font-medium text-zinc-600">KPI yang dimonitor</label>
+                                <input type="text" name="monitored_kpis" value={formData.monitored_kpis} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                            </div>
+                             <div>
+                                <label className="block mb-1 text-sm font-medium text-zinc-600">Penggunaan Energi Terbarukan (%)</label>
+                                <input type="number" min="0" name="renewable_energy_usage" placeholder="0-100" value={formData.renewable_energy_usage} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg"/>
+                            </div>
                         </div>
                     </div>
                 );
@@ -276,57 +433,64 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                         ← Kembali ke Beranda
                     </button>
                     
-                    <div className="text-center mb-6 pt-8">
-                        <h2 className="text-3xl font-bold" style={{color: colors.brand}}>{isLogin ? "Login Akun" : "Registrasi Destinasi"}</h2>
-                    </div>
-
                     <AnimatePresence mode="wait">
-                        {isLogin ? (
-                            <motion.div key="login" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                                <form onSubmit={handleAuthAction} className="space-y-5">
-                                    <div>
-                                        <label className="block mb-1 text-sm font-medium text-zinc-600">Email</label>
-                                        <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-4 py-3 border rounded-lg"/>
-                                    </div>
-                                    <div>
-                                        <label className="block mb-1 text-sm font-medium text-zinc-600">Password</label>
-                                        <input type="password" name="password" value={formData.password} onChange={handleChange} required className="w-full px-4 py-3 border rounded-lg"/>
-                                    </div>
-                                    <button type="submit" disabled={loading} style={{backgroundColor: colors.brand}} className="w-full py-3 font-semibold text-white rounded-lg hover:bg-[#1c4532] disabled:bg-slate-400">
-                                        {loading ? 'Memproses...' : 'Masuk'}
-                                    </button>
-                                </form>
-                                <p className="mt-6 text-sm text-center">Belum punya akun? <button onClick={() => setIsLogin(false)} className="font-semibold" style={{color: colors.brand}}>Daftar di sini</button></p>
-                            </motion.div>
+                        {showSuccess ? (
+                            <RegistrationSuccess onContinue={handleContinueToLogin} />
                         ) : (
-                            <motion.div key="register" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                                <ProgressBar step={step} totalSteps={4} />
-                                <form onSubmit={handleAuthAction}>
-                                    {renderRegisterForm()}
-                                    <div className="flex justify-between items-center mt-8">
-                                        {step > 1 && (
-                                            <button type="button" onClick={handlePrevStep} className="px-6 py-2 font-semibold text-slate-600 bg-slate-200 rounded-lg hover:bg-slate-300">
-                                                Kembali
-                                            </button>
-                                        )}
-                                        <div className="flex-grow"></div> {/* Spacer */}
-                                        {step < 4 ? (
-                                            <button type="button" onClick={handleNextStep} style={{backgroundColor: colors.brand}} className="px-6 py-2 font-semibold text-white rounded-lg hover:bg-[#1c4532]">
-                                                Lanjutkan
-                                            </button>
-                                        ) : (
-                                            <button type="submit" disabled={loading} style={{backgroundColor: colors.brand}} className="w-full md:w-auto px-6 py-2 font-semibold text-white rounded-lg hover:bg-[#1c4532] disabled:bg-slate-400">
-                                                {loading ? 'Mendaftarkan...' : 'Selesaikan Pendaftaran'}
-                                            </button>
-                                        )}
+                            <motion.div key="auth-form" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+                                <div className="text-center mb-6 pt-8">
+                                    <h2 className="text-3xl font-bold" style={{color: colors.brand}}>{isLogin ? "Login Akun" : "Registrasi Destinasi"}</h2>
+                                </div>
+                                {isLogin ? (
+                                    <form onSubmit={handleAuthAction} className="space-y-5">
+                                        <div>
+                                            <label className="block mb-1 text-sm font-medium text-zinc-600">Email</label>
+                                            <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-4 py-3 border rounded-lg"/>
+                                        </div>
+                                        <div>
+                                            <label className="block mb-1 text-sm font-medium text-zinc-600">Password</label>
+                                            <input type="password" name="password" value={formData.password} onChange={handleChange} required className="w-full px-4 py-3 border rounded-lg"/>
+                                        </div>
+                                        <button type="submit" disabled={loading} style={{backgroundColor: colors.brand}} className="w-full py-3 font-semibold text-white rounded-lg hover:bg-[#1c4532] disabled:bg-slate-400">
+                                            {loading ? 'Memproses...' : 'Masuk'}
+                                        </button>
+                                    </form>
+                                ) : (
+                                    // --- PERUBAHAN UTAMA: FORM DIBUNGKUS DALAM DIV, BUKAN <form> ---
+                                    <div>
+                                        <ProgressBar step={step} totalSteps={4} />
+                                        <div className="max-h-[60vh] overflow-y-auto pr-4 -mr-4">
+                                            {renderRegisterForm()}
+                                        </div>
+                                        <div className="flex justify-between items-center mt-8">
+                                            {step > 1 ? (
+                                                <button type="button" onClick={handlePrevStep} className="px-6 py-2 font-semibold text-slate-600 bg-slate-200 rounded-lg hover:bg-slate-300">
+                                                    Kembali
+                                                </button>
+                                            ) : <div></div>}
+                                            {step < 4 ? (
+                                                <button type="button" onClick={handleNextStep} disabled={loading} style={{backgroundColor: colors.brand}} className="px-6 py-2 font-semibold text-white rounded-lg hover:bg-[#1c4532] disabled:opacity-50">
+                                                    {loading ? 'Memeriksa...' : 'Lanjutkan'}
+                                                </button>
+                                            ) : (
+                                                <button type="button" onClick={() => handleAuthAction()} disabled={loading} style={{backgroundColor: colors.brand}} className="w-full md:w-auto px-6 py-2 font-semibold text-white rounded-lg hover:bg-[#1c4532] disabled:bg-slate-400">
+                                                    {loading ? 'Mendaftarkan...' : 'Selesaikan Pendaftaran'}
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                </form>
-                                <p className="mt-6 text-sm text-center">Sudah punya akun? <button onClick={() => { setIsLogin(true); setStep(1); }} className="font-semibold" style={{color: colors.brand}}>Masuk di sini</button></p>
+                                )}
+                                <p className="mt-6 text-sm text-center">
+                                    {isLogin ? "Belum punya akun?" : "Sudah punya akun?"}
+                                    <button onClick={() => { setIsLogin(!isLogin); setStep(1); setMessage({ type: '', content: '' }); }} className="font-semibold ml-1" style={{color: colors.brand}}>
+                                        {isLogin ? "Daftar di sini" : "Masuk di sini"}
+                                    </button>
+                                </p>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                     {message.content && (
+                     {message.content && !showSuccess && (
                         <p className={`mt-6 text-sm text-center p-3 rounded-lg ${message.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                             {message.content}
                         </p>
@@ -335,4 +499,4 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
             </motion.div>
         </div>
     );
-}
+} 
