@@ -161,10 +161,17 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
             const { error } = await supabase.auth.signInWithPassword({ email: formData.email, password: formData.password });
             if (error) setMessage({ type: 'error', content: error.message });
         } else {
-            const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+            // --- PERBAIKAN UTAMA: Kirim semua data form saat sign up ---
+            const profileData = { ...formData };
+            delete profileData.email;
+            delete profileData.password;
+            
+            const { error: signUpError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
-                options: { data: { destination_name: formData.destination_name } }
+                options: {
+                    data: profileData // Kirim semua data profil
+                }
             });
 
             if (signUpError) {
@@ -173,26 +180,14 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                 } else {
                     setMessage({ type: 'error', content: signUpError.message });
                 }
-                setLoading(false);
-                return;
-            }
-
-            if (user) {
-                const profileData = { ...formData };
-                delete profileData.email;
-                delete profileData.password;
-                
-                const { error: updateError } = await supabase.from('profiles').update(profileData).eq('id', user.id);
-                
-                if (updateError) {
-                     setMessage({ type: 'error', content: `Gagal menyimpan detail profil: ${updateError.message}` });
-                } else {
-                     setShowSuccess(true);
-                }
+            } else {
+                // Jika tidak ada error, langsung tampilkan pesan sukses
+                setShowSuccess(true);
             }
         }
         setLoading(false);
     };
+
 
     const handleContinueToLogin = () => {
         setShowSuccess(false);
