@@ -9,13 +9,13 @@ import StandardCompliancePage from './StandardCompliancePage';
 import PillarDetailPage from './PillarDetailPage';
 import AdminDashboardPage from './AdminDashboardPage';
 import AdminDestinationDetailPage from './AdminDestinationDetailPage';
-import NotificationPage from './NotificationPage';
 import AboutPage from './AboutPage';
 import AccountPage from './AccountPage';
 import FaqPage from './FaqPage';
 import PembelajaranPage from './PembelajaranPage';
 import PanduanPage from './PanduanPage';
-import SelfAssessmentPage from './SelfAssessmentPage'; // <-- 1. Impor komponen baru
+import SelfAssessmentPage from './SelfAssessmentPage';
+import ActionPlanPage from './ActionPlanPage';
 
 // Impor Ikon
 import {
@@ -60,14 +60,14 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         sidebarLinks = [
             { id: 'home', text: 'Home', icon: <HomeIcon /> },
             { id: 'review-compliance', text: 'Review Compliance', icon: <DocumentChartBarIcon /> },
-            { id: 'what-to-do', text: 'What To Do', icon: <ClipboardCheckIcon /> },
+            { id: 'action-plan', text: 'Action-plan', icon: <ClipboardCheckIcon /> },
             { id: 'pembelajaran', text: 'Pembelajaran', icon: <AcademicCapIcon /> },
             { id: 'panduan', text: 'Panduan', icon: <QuestionMarkCircleIcon /> },
         ];
     } else {
         sidebarLinks = [
             { id: 'home', text: 'Home', icon: <HomeIcon /> },
-            { id: 'what-to-do', text: 'What To Do', icon: <ClipboardCheckIcon /> },
+            { id: 'action-plan', text: 'Action-plan', icon: <ClipboardCheckIcon /> },
             { 
                 id: 'standard-compliance', text: 'Standard Compliance', icon: <ShieldCheckIcon />,
                 children: [
@@ -132,8 +132,9 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                 return <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />;
             case 'standard-compliance':
                 return <StandardCompliancePage setActiveDashboardPage={setActiveDashboardPage} />;
-            case 'what-to-do': return <NotificationPage />;
-            
+            case 'action-plan':
+                return <ActionPlanPage supabase={supabase} user={user} userRole={userRole} />;
+       
             // --- CASE BARU DITAMBAHKAN DI SINI ---
             case 'self-assessment':
                 return <SelfAssessmentPage supabase={supabase} user={user} />;

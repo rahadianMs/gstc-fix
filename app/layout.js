@@ -14,6 +14,8 @@ export default function RootLayout({ children }) {
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
         {children}
+        {/* TAMBAHKAN BARIS INI */}
+        <div id="portal-root"></div>
       </body>
     </html>
   );
