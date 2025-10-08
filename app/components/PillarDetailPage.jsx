@@ -50,11 +50,9 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
 
     const visual = PILLAR_VISUALS[pillar];
 
-    // --- PERUBAHAN UTAMA DI SINI ---
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            // Query sekarang mengambil semua data yang dibutuhkan sekaligus
             const { data, error } = await supabase
                 .from('gstc_criteria')
                 .select(`
@@ -66,13 +64,13 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
                 `)
                 .eq('pillar', pillar)
                 .eq('gstc_sub_indicators.evidence_submissions.destination_id', user.id)
-                .order('criterion_code');
+                // Kita tetap mengurutkan di sini sebagai urutan dasar
+                .order('criterion_code'); 
             
             if (error) {
                 console.error("Error fetching pillar details:", error);
             } else if (data) {
                 setCriteria(data);
-                // Kalkulasi progres tetap sama
                 let total = 0, done = 0;
                 data.forEach(c => {
                     c.gstc_sub_indicators.forEach(s => {
@@ -87,7 +85,6 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
         fetchData();
     }, [pillar, supabase, user.id]);
     
-    // Mengelompokkan berdasarkan sub-seksi
     const groupedCriteria = criteria.reduce((acc, criterion) => {
         const key = criterion.sub_section_title;
         if (!acc[key]) acc[key] = { code: criterion.sub_section_code, criteria: [] };
@@ -118,7 +115,9 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
 
             {loading ? <p className='text-center'>Memuat data progres...</p> : (
                 <div className="space-y-10">
-                    {Object.entries(groupedCriteria).map(([subSectionTitle, data]) => {
+                    {Object.entries(groupedCriteria)
+                        .sort(([, a], [, b]) => a.code.localeCompare(b.code))
+                        .map(([subSectionTitle, data]) => {
                         const progressValue = calculateProgress(data.criteria);
                         return (
                             <div key={subSectionTitle} className="bg-white p-6 rounded-2xl shadow-md border">
@@ -128,10 +127,16 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
                                 <ProgressBar value={progressValue} title="Progress Bagian" />
 
                                 <div className="mt-8 space-y-4">
-                                    {data.criteria.map(criterion => (
+                                    {/* --- PERBAIKAN UTAMA DI SINI --- */}
+                                    {data.criteria
+                                        .sort((a, b) => {
+                                            const numA = parseInt(a.criterion_code.substring(1));
+                                            const numB = parseInt(b.criterion_code.substring(1));
+                                            return numA - numB;
+                                        })
+                                        .map(criterion => (
                                         <CriterionAccordion 
                                             key={criterion.id} 
-                                            // Kirim objek 'criterion' yang sudah lengkap dengan sub-indikator
                                             criterion={criterion} 
                                             user={user} 
                                             supabase={supabase} 

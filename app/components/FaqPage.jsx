@@ -3,10 +3,26 @@
 // Komponen untuk Halaman FAQ
 export default function FaqPage() {
     const faqs = [
-        { q: "Apa itu Jejak Karbon?", a: "Jejak karbon adalah jumlah total emisi gas rumah kaca (seperti CO₂) yang dihasilkan secara langsung maupun tidak langsung oleh sebuah individu, organisasi, acara, atau produk. Dalam konteks ini, kita mengukur jejak karbon dari operasional bisnis pariwisata Anda." },
-        { q: "Mengapa bisnis saya perlu menghitung jejak karbon?", a: "Menghitung jejak karbon adalah langkah pertama untuk memahami dampak lingkungan dari bisnis Anda. Dengan data ini, Anda dapat mengidentifikasi area inefisiensi, mengurangi biaya operasional (misalnya, energi), meningkatkan citra merek, menarik wisatawan yang sadar lingkungan, dan berkontribusi pada komitmen nasional menuju Net Zero Emissions." },
-        { q: "Apakah data yang saya masukkan aman?", a: "Tentu. Platform ini menggunakan standar keamanan modern untuk melindungi semua data yang Anda masukkan. Data Anda hanya akan digunakan untuk keperluan analisis agregat dan pelaporan sesuai kebijakan privasi, serta tidak akan dibagikan ke pihak lain tanpa persetujuan Anda." },
-        { q: "Apa itu Deklarasi Glasgow tentang Aksi Iklim di Sektor Pariwisata?", a: "Ini adalah sebuah komitmen global yang menyatukan sektor pariwisata untuk mengurangi separuh emisi karbon pada tahun 2030 dan mencapai Net Zero selambat-lambatnya pada tahun 2050. Dengan menggunakan platform ini, Anda menjadi bagian dari gerakan global tersebut." },
+        { 
+            q: "Apa itu Kriteria Destinasi GSTC?", 
+            a: "Kriteria Destinasi Global Sustainable Tourism Council (GSTC) adalah standar global yang menetapkan praktik terbaik dalam pariwisata berkelanjutan untuk destinasi. Kriteria ini berfungsi sebagai kerangka kerja untuk membantu destinasi mengelola dampak lingkungan, sosial-ekonomi, dan budaya dari pariwisata." 
+        },
+        { 
+            q: "Mengapa destinasi saya perlu mengikuti asesmen ini?", 
+            a: "Mengikuti asesmen ini membantu destinasi Anda mengidentifikasi kekuatan dan kelemahan dalam praktik keberlanjutan. Ini adalah langkah pertama untuk meningkatkan daya saing, menarik wisatawan yang sadar lingkungan, dan mempersiapkan diri untuk sertifikasi internasional yang dapat meningkatkan kredibilitas destinasi Anda di mata dunia." 
+        },
+        { 
+            q: "Apa saja empat pilar utama dalam Kriteria GSTC?", 
+            a: "Empat pilar tersebut adalah: (A) Pengelolaan Berkelanjutan, (B) Keberlanjutan Sosial-Ekonomi, (C) Keberlanjutan Budaya, dan (D) Keberlanjutan Lingkungan. Platform ini disusun berdasarkan keempat pilar tersebut." 
+        },
+        { 
+            q: "Apa jenis bukti yang perlu saya unggah?", 
+            a: "Anda perlu mengunggah bukti dalam bentuk tautan (URL) yang dapat diakses oleh konsultan. Contohnya termasuk tautan ke dokumen kebijakan, laporan, foto, video, atau halaman web yang relevan yang tersimpan di layanan seperti Google Drive, Dropbox, atau situs web resmi Anda." 
+        },
+        {
+            q: "Apa yang terjadi setelah saya mengajukan bukti untuk direview?",
+            a: "Setelah Anda mengajukan bukti (status 'In Review'), Anda tidak dapat mengubahnya sampai konsultan selesai memberikan ulasan. Konsultan akan meninjau bukti Anda dan mengubah statusnya menjadi 'Done' (Disetujui), 'Rejected' (Ditolak), atau 'Revision' (Perlu Revisi) dengan memberikan komentar. Anda akan dapat melihat umpan balik ini untuk melakukan perbaikan jika diperlukan."
+        }
     ];
     return (
         <div className="max-w-3xl mx-auto">

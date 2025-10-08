@@ -2,20 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDownIcon, TrashCanIcon } from './Icons';
+// --- PERUBAHAN DI SINI: Impor Ikon ---
+import { ChevronDownIcon, TrashCanIcon, ChatBubbleIcon } from './Icons';
 import SubIndicatorItem from './SubIndicatorItem';
 import EvidenceModal from './EvidenceModal';
 import ReviewModal from './ReviewModal';
 
 const CHAR_LIMIT = 280;
 
-const ChatBubbleIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193l-3.722.372c-1.03.103-1.98-.7-1.98-1.728V15.5a3 3 0 00-3-3H6.222c-1.124 0-2.083-.872-2.193-1.98l-.372-3.722c-.103-1.03.7-1.98 1.728-1.98h4.286c.969 0 1.813.616 2.097 1.5M12 10.5a.75.75 0 100-1.5.75.75 0 000 1.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5a.75.75 0 100-1.5.75.75 0 000 1.5zM10.5 10.5a.75.75 0 100-1.5.75.75 0 000 1.5zM7.5 10.5a.75.75 0 100-1.5.75.75 0 000 1.5z" />
-    </svg>
-);
-
+// --- PERUBAHAN DI SINI: Definisi ikon lokal dihapus ---
 
 export default function CriterionAccordion({ criterion, user, supabase, onDataChange }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -151,7 +146,8 @@ export default function CriterionAccordion({ criterion, user, supabase, onDataCh
                                                 className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition-colors"
                                                 style={{backgroundColor: '#3f545f'}}
                                             >
-                                                <ChatBubbleIcon />
+                                                {/* PERUBAHAN DI SINI: Menambahkan margin kanan */}
+                                                <ChatBubbleIcon className="w-5 h-5 mr-2" />
                                                 Diskusi
                                             </button>
                                         )}
