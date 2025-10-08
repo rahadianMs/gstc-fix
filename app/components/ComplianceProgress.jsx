@@ -89,11 +89,12 @@ const GaugeChart = ({ value }) => {
     );
 };
 
-// --- KOMPONEN FOCUS AREA (TIDAK BERUBAH) ---
+// --- KOMPONEN FOCUS AREA (JUDUL DIPERBARUI) ---
 const FocusArea = ({ pillar }) => {
     return (
         <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-lg border h-full">
-            <h4 className="text-lg font-bold text-slate-800 mb-2">⭐ Focus Area</h4>
+            {/* --- PERUBAHAN DI SINI: BINTANG DIHAPUS --- */}
+            <h4 className="text-lg font-bold text-slate-800 mb-2">Focus Area</h4>
             <div className="text-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: pillar.color }}>
                     <span className="text-3xl font-bold text-white">{pillar.letter}</span>

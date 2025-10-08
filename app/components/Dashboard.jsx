@@ -26,7 +26,8 @@ import {
     UserCircleIcon,
     ShieldCheckIcon,
     ChevronDownIcon,
-    DocumentChartBarIcon
+    DocumentChartBarIcon,
+    PencilIcon,
 } from './Icons.jsx';
 
 // Komponen Dasbor Utama
@@ -35,6 +36,9 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
     const [userRole, setUserRole] = useState(null);
     const [loadingRole, setLoadingRole] = useState(true);
     const [dataVersion, setDataVersion] = useState(Date.now());
+    
+    const logoWiseSteps = "https://cdn-biofo.nitrocdn.com/pguRNgUGRHgHBjvClHTnuzLuMOCPhzJi/assets/images/optimized/rev-a721222/wisestepsconsulting.id/wp-content/uploads/2023/03/WSG_Masterfiles_Logo-02.png";
+
 
     useEffect(() => {
         const fetchUserRole = async () => {
@@ -67,7 +71,6 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
     } else {
         sidebarLinks = [
             { id: 'home', text: 'Home', icon: <HomeIcon /> },
-            { id: 'action-plan', text: 'Action-plan', icon: <ClipboardCheckIcon /> },
             { 
                 id: 'standard-compliance', text: 'Standard Compliance', icon: <ShieldCheckIcon />,
                 children: [
@@ -75,9 +78,8 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                     { id: 'compliance-c', text: 'PILAR C' }, { id: 'compliance-d', text: 'PILAR D' },
                 ] 
             },
-            // --- LINK BARU DITAMBAHKAN DI SINI ---
-            { id: 'self-assessment', text: 'Self-Assessment', icon: <DocumentChartBarIcon /> },
-            // ------------------------------------
+            { id: 'action-plan', text: 'Action Plan', icon: <ClipboardCheckIcon /> },
+            { id: 'self-assessment', text: 'Self-Assessment', icon: <PencilIcon className="w-5 h-5" /> },
             { id: 'pembelajaran', text: 'Pembelajaran', icon: <AcademicCapIcon /> },
             { id: 'panduan', text: 'Panduan', icon: <QuestionMarkCircleIcon /> },
         ];
@@ -88,7 +90,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
             return "Review Destinasi";
         }
         
-        if (activeDashboardPage.startsWith('compliance-')) {
+        if (typeof activeDashboardPage === 'string' && activeDashboardPage.startsWith('compliance-')) {
             const pillar = activeDashboardPage.split('-')[1].toUpperCase();
             return `Pilar ${pillar}`;
         }
@@ -103,52 +105,6 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         return 'Dasbor';
     };
     const pageTitle = getPageTitle();
-
-    const PageContent = () => {
-        if (loadingRole) return <div className="text-center p-8">Memverifikasi peran pengguna...</div>;
-
-        if (typeof activeDashboardPage === 'object' && activeDashboardPage !== null) {
-            if (activeDashboardPage.page === 'admin-destination-detail') {
-                return <AdminDestinationDetailPage 
-                    destinationId={activeDashboardPage.destinationId} 
-                    supabase={supabase} 
-                    setActiveDashboardPage={setActiveDashboardPage} 
-                    user={user} 
-                />;
-            }
-        }
-        
-        if (activeDashboardPage.startsWith('compliance-')) {
-            const pillar = activeDashboardPage.split('-')[1].toUpperCase();
-            return <PillarDetailPage pillar={pillar} supabase={supabase} user={user} />;
-        }
-
-        switch (activeDashboardPage) {
-            case 'home':
-                return userRole === 'consultant' 
-                    ? <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />
-                    : <BerandaPage user={user} supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} dataVersion={dataVersion} />;
-            case 'review-compliance':
-                return <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />;
-            case 'standard-compliance':
-                return <StandardCompliancePage setActiveDashboardPage={setActiveDashboardPage} />;
-            case 'action-plan':
-                return <ActionPlanPage supabase={supabase} user={user} userRole={userRole} />;
-       
-            // --- CASE BARU DITAMBAHKAN DI SINI ---
-            case 'self-assessment':
-                return <SelfAssessmentPage supabase={supabase} user={user} />;
-            // ------------------------------------
-
-            case 'pembelajaran': return <PembelajaranPage />;
-            case 'panduan': return <PanduanPage />;
-            case 'tentang': return <AboutPage />;
-            case 'akun': return <AccountPage user={user} supabase={supabase} />;
-            case 'faq': return <FaqPage />;
-            default:
-                 return <div className="text-center p-8">Halaman tidak ditemukan.</div>;
-        }
-    };
     
     const isLinkActive = (link) => {
         if (link.id === activeDashboardPage) return true;
@@ -160,15 +116,87 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         }
         return false;
     };
+    
+    // --- PERBAIKAN BUG RENDER DIMULAI DI SINI ---
+    // Logika untuk menentukan komponen mana yang akan dirender, dipindahkan ke sini.
+    let pageToRender;
+
+    if (loadingRole) {
+        pageToRender = <div className="text-center p-8">Memverifikasi peran pengguna...</div>;
+    } else if (typeof activeDashboardPage === 'object' && activeDashboardPage !== null) {
+        if (activeDashboardPage.page === 'admin-destination-detail') {
+            pageToRender = <AdminDestinationDetailPage 
+                destinationId={activeDashboardPage.destinationId} 
+                supabase={supabase} 
+                setActiveDashboardPage={setActiveDashboardPage} 
+                user={user} 
+            />;
+        }
+    } else if (typeof activeDashboardPage === 'string' && activeDashboardPage.startsWith('compliance-')) {
+        const pillar = activeDashboardPage.split('-')[1].toUpperCase();
+        pageToRender = <PillarDetailPage pillar={pillar} supabase={supabase} user={user} />;
+    } else {
+        switch (activeDashboardPage) {
+            case 'home':
+                pageToRender = userRole === 'consultant' 
+                    ? <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />
+                    : <BerandaPage user={user} supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} dataVersion={dataVersion} />;
+                break;
+            case 'review-compliance':
+                pageToRender = <AdminDashboardPage supabase={supabase} setActiveDashboardPage={setActiveDashboardPage} />;
+                break;
+            case 'standard-compliance':
+                pageToRender = <StandardCompliancePage setActiveDashboardPage={setActiveDashboardPage} />;
+                break;
+            case 'action-plan':
+                pageToRender = <ActionPlanPage supabase={supabase} user={user} userRole={userRole} />;
+                break;
+            case 'self-assessment':
+                pageToRender = <SelfAssessmentPage supabase={supabase} user={user} />;
+                break;
+            case 'pembelajaran':
+                pageToRender = <PembelajaranPage />;
+                break;
+            case 'panduan':
+                pageToRender = <PanduanPage />;
+                break;
+            case 'tentang':
+                pageToRender = <AboutPage />;
+                break;
+            case 'akun':
+                pageToRender = <AccountPage user={user} supabase={supabase} />;
+                break;
+            case 'faq':
+                pageToRender = <FaqPage />;
+                break;
+            default:
+                pageToRender = <div className="text-center p-8">Halaman tidak ditemukan.</div>;
+        }
+    }
+    // --- AKHIR DARI PERBAIKAN BUG RENDER ---
+
 
     return (
         <div id="app-wrapper" className="flex min-h-screen bg-slate-100">
+            <style jsx global>{`
+                .logo-white {
+                    filter: brightness(0) invert(1) grayscale(1);
+                }
+            `}</style>
             <aside 
                 className="fixed top-0 left-0 z-40 flex flex-col h-screen p-6 w-72 text-white"
                 style={{backgroundColor: '#1c2120'}}
             >
-               <div className="pb-6 mb-4 border-b border-white/20">
-                    <h1 className="text-xl font-bold">GSTC Self Assistant</h1>
+               <div className="pb-6 mb-4 border-b border-white/20 flex items-center gap-3">
+                    <img 
+                        src={logoWiseSteps} 
+                        alt="Wise Steps Consulting Logo" 
+                        className="h-8 logo-white" 
+                    />
+                    <div>
+                        <h1 className="text-sm font-bold leading-tight">Certification</h1>
+                        <h1 className="text-sm font-bold leading-tight">Assistance</h1>
+                    </div>
                </div>
                 <nav className="flex flex-col flex-grow gap-1 overflow-y-auto">
                     {sidebarLinks.map(link => {
@@ -239,7 +267,8 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                             exit={{ opacity: 0, y: -15 }} 
                             transition={{ duration: 0.2 }}
                         >
-                            <PageContent />
+                            {/* Variabel pageToRender dipanggil di sini */}
+                            {pageToRender}
                         </motion.div>
                     </AnimatePresence>
                 </main>

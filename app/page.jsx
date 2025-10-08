@@ -15,7 +15,7 @@ export default function HomePage() {
     const [session, setSession] = useState(null);
     const [activePage, setActivePage] = useState('landing');
     const [isLogin, setIsLogin] = useState(true);
-    const [activeDashboardPage, setActiveDashboardPage] = useState('home'); // Diubah dari 'beranda'
+    const [activeDashboardPage, setActiveDashboardPage] = useState('home');
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const userMenuRef = useRef(null);
     const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ export default function HomePage() {
             setSession(session);
             if (session) {
                 setActivePage('app');
-                setActiveDashboardPage('home'); // Diubah dari 'beranda'
+                // Jangan reset ke 'home' di sini agar tidak pindah halaman saat auth state refresh
             } else {
                 setActivePage('landing');
             }
@@ -46,6 +46,9 @@ export default function HomePage() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
+        // Reset state setelah logout
+        setActivePage('landing');
+        setActiveDashboardPage('home');
     };
 
     useEffect(() => {
@@ -60,21 +63,44 @@ export default function HomePage() {
         };
     }, [userMenuRef]);
 
+    // --- PERBAIKAN UTAMA ADA DI SINI ---
+
+    // Tampilkan loading screen jika sesi belum siap
     if (loading) {
         return <div className="flex items-center justify-center min-h-screen bg-slate-50"><div className="text-slate-500">Memuat Aplikasi...</div></div>;
     }
 
-    const renderPage = () => {
-        switch (activePage) {
-            case 'auth':
-                return <AuthPage supabase={supabase} setActivePage={setActivePage} isLogin={isLogin} setIsLogin={setIsLogin} />;
-            case 'app':
-                return session ? <Dashboard supabase={supabase} user={session.user} activeDashboardPage={activeDashboardPage} setActiveDashboardPage={setActiveDashboardPage} isUserMenuOpen={isUserMenuOpen} setIsUserMenuOpen={setIsUserMenuOpen} userMenuRef={userMenuRef} handleLogout={handleLogout} /> : <LandingPage setActivePage={setActivePage} setIsLogin={setIsLogin} />;
-            case 'landing':
-            default:
-                return <LandingPage setActivePage={setActivePage} setIsLogin={setIsLogin} />;
-        }
-    };
+    // Gunakan conditional rendering di level atas
+    let content;
+    switch (activePage) {
+        case 'auth':
+            content = <AuthPage supabase={supabase} setActivePage={setActivePage} isLogin={isLogin} setIsLogin={setIsLogin} />;
+            break;
+        case 'app':
+            content = session ? (
+                <Dashboard 
+                    supabase={supabase} 
+                    user={session.user} 
+                    activeDashboardPage={activeDashboardPage} 
+                    setActiveDashboardPage={setActiveDashboardPage} 
+                    isUserMenuOpen={isUserMenuOpen} 
+                    setIsUserMenuOpen={setIsUserMenuOpen} 
+                    userMenuRef={userMenuRef} 
+                    handleLogout={handleLogout} 
+                />
+            ) : (
+                <LandingPage setActivePage={setActivePage} setIsLogin={setIsLogin} />
+            );
+            break;
+        case 'landing':
+        default:
+            content = <LandingPage setActivePage={setActivePage} setIsLogin={setIsLogin} />;
+            break;
+    }
 
-    return <div className="font-sans bg-slate-50 text-slate-800">{renderPage()}</div>;
+    return (
+        <div className="font-sans bg-slate-50 text-slate-800">
+            {content}
+        </div>
+    );
 }
