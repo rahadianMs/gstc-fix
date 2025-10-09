@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { ShieldCheckIcon, QuestionMarkCircleIcon, BellIcon } from './Icons';
-import ComplianceProgress from './ComplianceProgress'; // <-- Impor komponen baru
+import ComplianceProgress from './ComplianceProgress'; 
+import ProgressHeatmap from './ProgressHeatmap'; // <-- 1. Impor komponen heatmap baru
 
 // Komponen Utama Halaman Beranda
 export default function BerandaPage({ user, supabase, setActiveDashboardPage, dataVersion }) {
@@ -32,7 +33,6 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
                 className="relative p-8 rounded-2xl text-white bg-cover bg-center min-h-[200px] flex flex-col justify-end"
                 style={{ backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0.1)), url('${staticBgImage}')` }}
             >
-                 {/* --- PERUBAHAN FUNGSI ONCLICK DI SINI --- */}
                  <button 
                     onClick={() => setActiveDashboardPage('action-plan')}
                     className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors z-10"
@@ -40,7 +40,6 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
                 >
                     <BellIcon />
                 </button>
-                {/* ------------------------------------------- */}
                 <div className="relative z-0">
                     {loading ? (
                         <div className="h-10 bg-white/20 rounded-md animate-pulse w-3/4 mb-2"></div>
@@ -52,6 +51,9 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
             </div>
             
             <ComplianceProgress supabase={supabase} user={user} />
+            
+            {/* --- 2. Tambahkan komponen heatmap di sini --- */}
+            <ProgressHeatmap supabase={supabase} user={user} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-3 bg-white p-6 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
