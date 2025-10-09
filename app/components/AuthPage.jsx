@@ -224,7 +224,7 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                                     <option value="">Pilih Tipe</option>
                                     <option>Dinas Pariwisata Kabupaten/Kota/Provinsi</option>
                                     <option>Badan Otorita Kawasan Pariwisata</option>
-                                    <option>Badan Usaha Milik Daerah (BUMD) bidang pariwisata</option>
+                                    <option>Badan Usaha Milik Negara (BUMN) /Badan Usaha Milik Daerah (BUMD) bidang pariwisata</option>
                                     <option>Badan Pengelola Kawasan (misalnya taman wisata, geopark, kawasan konservasi)</option>
                                     <option>Lembaga Swadaya Masyarakat / Yayasan / Asosiasi Pariwisata</option>
                                     <option>Kelompok Sadar Wisata (Pokdarwis) atau komunitas pariwisata</option>
