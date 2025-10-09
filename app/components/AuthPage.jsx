@@ -104,8 +104,8 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
             setFormData(prev => ({
                 ...prev,
                 [name]: checked 
-                    ? [...prev[name], value]
-                    : prev[name].filter(item => item !== value)
+                    ? [...(prev[name] || []), value]
+                    : (prev[name] || []).filter(item => item !== value)
             }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
@@ -161,16 +161,29 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
             const { error } = await supabase.auth.signInWithPassword({ email: formData.email, password: formData.password });
             if (error) setMessage({ type: 'error', content: error.message });
         } else {
-            // --- PERBAIKAN UTAMA: Kirim semua data form saat sign up ---
             const profileData = { ...formData };
             delete profileData.email;
             delete profileData.password;
             
+            const integerFields = [
+                'village_count', 'population_count', 'visitor_count_last_year', 
+                'hotel_count', 'homestay_count', 'restaurant_count', 'tour_operator_count', 
+                'sme_count', 'certified_entity_count', 'renewable_energy_usage'
+            ];
+            
+            integerFields.forEach(field => {
+                if (profileData[field] === '' || profileData[field] === null || isNaN(parseInt(profileData[field], 10))) {
+                    profileData[field] = null;
+                } else {
+                    profileData[field] = parseInt(profileData[field], 10);
+                }
+            });
+
             const { error: signUpError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
-                    data: profileData // Kirim semua data profil
+                    data: profileData
                 }
             });
 
@@ -178,10 +191,9 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                 if (signUpError.message.includes("User already registered")) {
                     setMessage({ type: 'error', content: 'Email ini sudah terdaftar. Silakan gunakan email lain atau login.' });
                 } else {
-                    setMessage({ type: 'error', content: signUpError.message });
+                    setMessage({ type: 'error', content: `Gagal mendaftar: ${signUpError.message}` });
                 }
             } else {
-                // Jika tidak ada error, langsung tampilkan pesan sukses
                 setShowSuccess(true);
             }
         }
@@ -193,8 +205,15 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
         setShowSuccess(false);
         setIsLogin(true);
         setStep(1);
-        setFormData({ ...formData, password: '' });
+        const emailToKeep = formData.email;
+        // Reset form data except for email
+        const newFormData = Object.keys(formData).reduce((acc, key) => {
+            acc[key] = '';
+            return acc;
+        }, {});
+        setFormData({ ...newFormData, email: emailToKeep });
     };
+
     const renderRegisterForm = () => {
         switch (step) {
             case 1:
@@ -224,7 +243,7 @@ export default function AuthPage({ supabase, setActivePage, isLogin, setIsLogin 
                                     <option value="">Pilih Tipe</option>
                                     <option>Dinas Pariwisata Kabupaten/Kota/Provinsi</option>
                                     <option>Badan Otorita Kawasan Pariwisata</option>
-                                    <option>Badan Usaha Milik Negara (BUMN) /Badan Usaha Milik Daerah (BUMD) bidang pariwisata</option>
+                                    <option>Badan usaha milik negara (BUMN) / Badan usaha milik daerah (BUMD) dibidang pariwisata</option>
                                     <option>Badan Pengelola Kawasan (misalnya taman wisata, geopark, kawasan konservasi)</option>
                                     <option>Lembaga Swadaya Masyarakat / Yayasan / Asosiasi Pariwisata</option>
                                     <option>Kelompok Sadar Wisata (Pokdarwis) atau komunitas pariwisata</option>
