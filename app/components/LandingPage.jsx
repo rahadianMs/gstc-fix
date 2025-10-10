@@ -6,7 +6,7 @@ import { BookOpenIcon, DashboardIcon, HandshakeIcon, ClipboardCheckIcon, ChatBub
 export default function LandingPage({ setActivePage, setIsLogin }) {
     const [isScrolled, setIsScrolled] = useState(false);
 
-    const logoWiseSteps = "https://cdn-biofo.nitrocdn.com/pguRNgUGRHgHBjvClHTnuzLuMOCPhzJi/assets/images/optimized/rev-a721222/wisestepsconsulting.id/wp-content/uploads/2023/03/WSG_Masterfiles_Logo-02.png";
+    const logoWiseSteps = "https://github.com/rahadianMs/gstc-fix/blob/main/asset/WSG_Masterfiles_Logo-02-1024x264.png?raw=true";
     const logoGstc = "https://www.gstc.org/wp-content/uploads/GSTC-logo.png";
     
     useEffect(() => {

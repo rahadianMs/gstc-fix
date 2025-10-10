@@ -39,7 +39,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
     const [loadingRole, setLoadingRole] = useState(true);
     const [dataVersion, setDataVersion] = useState(Date.now());
     
-    const logoWiseSteps = "https://cdn-biofo.nitrocdn.com/pguRNgUGRHgHBjvClHTnuzLuMOCPhzJi/assets/images/optimized/rev-a721222/wisestepsconsulting.id/wp-content/uploads/2023/03/WSG_Masterfiles_Logo-02.png";
+    const logoWiseSteps = "https://github.com/rahadianMs/gstc-fix/blob/main/asset/WSG_Masterfiles_Logo-02-1024x264.png?raw=true";
 
     useEffect(() => {
         const fetchUserRole = async () => {
