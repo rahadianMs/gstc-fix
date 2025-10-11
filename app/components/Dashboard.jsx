@@ -1,3 +1,4 @@
+// app/components/Dashboard.jsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -17,6 +18,7 @@ import PanduanPage from './PanduanPage';
 import SelfAssessmentPage from './SelfAssessmentPage';
 import ActionPlanPage from './ActionPlanPage';
 import BookingSessionPage from './BookingSessionPage';
+import ResourceAdminPage from './ResourceAdminPage'; // <-- 1. IMPORT HALAMAN BARU
 
 // Impor Ikon
 import {
@@ -29,7 +31,7 @@ import {
     ChevronDownIcon,
     DocumentChartBarIcon,
     PencilIcon,
-    VideoCameraIcon, // <-- Ganti CalendarDaysIcon dengan ini
+    VideoCameraIcon,
 } from './Icons.jsx';
 
 // Komponen Dasbor Utama
@@ -66,7 +68,7 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
             { id: 'home', text: 'Home', icon: <HomeIcon /> },
             { id: 'review-compliance', text: 'Review Compliance', icon: <DocumentChartBarIcon /> },
             { id: 'action-plan', text: 'Action Plan', icon: <ClipboardCheckIcon /> },
-            { id: 'booking-session', text: 'Consultation Session', icon: <VideoCameraIcon /> }, // <-- Ikon Diubah
+            { id: 'booking-session', text: 'Consultation Session', icon: <VideoCameraIcon /> },
             { id: 'pembelajaran', text: 'Resource', icon: <AcademicCapIcon /> },
             { id: 'panduan', text: 'Guide', icon: <QuestionMarkCircleIcon /> },
         ];
@@ -81,15 +83,13 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                 ] 
             },
             { id: 'action-plan', text: 'Action Plan', icon: <ClipboardCheckIcon /> },
-            { id: 'booking-session', text: 'Consultation Session', icon: <VideoCameraIcon /> }, // <-- Ikon Diubah
+            { id: 'booking-session', text: 'Consultation Session', icon: <VideoCameraIcon /> },
             { id: 'self-assessment', text: 'Self-Assessment', icon: <PencilIcon className="w-5 h-5" /> },
             { id: 'pembelajaran', text: 'Resource', icon: <AcademicCapIcon /> },
             { id: 'panduan', text: 'Guide', icon: <QuestionMarkCircleIcon /> },
         ];
     }
     
-    // ... Sisa kode komponen Dashboard.jsx tidak berubah ...
-    // (Saya sengaja potong agar tidak terlalu panjang, karena tidak ada perubahan lain selain di atas)
     const getPageTitle = () => {
         if (typeof activeDashboardPage === 'object' && activeDashboardPage?.page === 'admin-destination-detail') {
             return "Review Destinasi";
@@ -98,6 +98,11 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
         if (typeof activeDashboardPage === 'string' && activeDashboardPage.startsWith('compliance-')) {
             const pillar = activeDashboardPage.split('-')[1].toUpperCase();
             return `Pilar ${pillar}`;
+        }
+
+        // <-- 2. TAMBAHKAN KONDISI UNTUK JUDUL HALAMAN ADMIN
+        if (activeDashboardPage === 'resource-admin') {
+            return 'Kelola Materi';
         }
 
         const allLinks = sidebarLinks.flatMap(l => l.children || [l]);
@@ -113,6 +118,10 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
     
     const isLinkActive = (link) => {
         if (link.id === activeDashboardPage) return true;
+
+        // <-- 3. TAMBAHKAN LOGIKA ACTIVE STATE UNTUK ADMIN
+        if (link.id === 'pembelajaran' && activeDashboardPage === 'resource-admin') return true;
+
         if ((link.id === 'standard-compliance' || link.id === 'review-compliance') && typeof activeDashboardPage === 'object' && activeDashboardPage?.page === 'admin-destination-detail') {
             return true;
         }
@@ -161,7 +170,12 @@ export default function Dashboard({ supabase, user, activeDashboardPage, setActi
                 pageToRender = <SelfAssessmentPage supabase={supabase} user={user} />;
                 break;
             case 'pembelajaran':
-                pageToRender = <PembelajaranPage />;
+                // <-- 4. PASS PROPS BARU KE PEMBELAJARANPAGE
+                pageToRender = <PembelajaranPage supabase={supabase} user={user} userRole={userRole} setActiveDashboardPage={setActiveDashboardPage} />;
+                break;
+            // <-- 5. TAMBAHKAN CASE BARU UNTUK HALAMAN ADMIN
+            case 'resource-admin':
+                 pageToRender = <ResourceAdminPage supabase={supabase} user={user} setActiveDashboardPage={setActiveDashboardPage} />;
                 break;
             case 'panduan':
                 pageToRender = <PanduanPage />;
