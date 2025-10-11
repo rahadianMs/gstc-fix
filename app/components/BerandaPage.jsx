@@ -11,7 +11,6 @@ import { AnimatePresence } from 'framer-motion';
 export default function BerandaPage({ user, supabase, setActiveDashboardPage, dataVersion }) {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
-
     const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [hasUnread, setHasUnread] = useState(false);
@@ -63,6 +62,12 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
         if (notification.link_to) {
             setActiveDashboardPage(notification.link_to);
         }
+        if (!notification.is_read) {
+            // Update UI optimis
+            setNotifications(current => current.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
+            // Update DB
+            supabase.from('notifications').update({ is_read: true }).eq('id', notification.id).then();
+        }
         setIsNotificationPanelOpen(false);
     };
 
@@ -71,24 +76,10 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
     };
 
     const handleMarkAllAsRead = async () => {
-        // Simpan ID notifikasi yang belum dibaca sebelum state diubah
-        const unreadNotificationIds = notifications
-            .filter(n => !n.is_read)
-            .map(n => n.id);
-
-        // Jika tidak ada yang perlu diupdate, jangan lakukan apa-apa
+        const unreadNotificationIds = notifications.filter(n => !n.is_read).map(n => n.id);
         if (unreadNotificationIds.length === 0) return;
-
-        // Update UI secara optimis
         setNotifications(current => current.map(n => ({ ...n, is_read: true })));
-
-        // Kirim perintah update ke database
-        const { error } = await supabase
-            .from('notifications')
-            .update({ is_read: true })
-            .in('id', unreadNotificationIds);
-
-        // Jika gagal, kembalikan state UI ke semula dan muat ulang data dari server
+        const { error } = await supabase.from('notifications').update({ is_read: true }).in('id', unreadNotificationIds);
         if (error) {
             console.error("Gagal menandai semua notifikasi sebagai dibaca:", error);
             fetchNotifications(); 
@@ -126,8 +117,11 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
                     </button>
                     <AnimatePresence>
                         {isNotificationPanelOpen && (
+                            // --- PERUBAHAN DI SINI: Mengirim props baru ---
                             <NotificationPanel 
                                 notifications={notifications}
+                                supabase={supabase}
+                                onUpdateNotifications={setNotifications}
                                 onClose={() => setIsNotificationPanelOpen(false)}
                                 onNotificationClick={handleNotificationClick}
                                 onMarkAllAsRead={handleMarkAllAsRead}
@@ -144,7 +138,6 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
             </div>
             
             <ComplianceProgress supabase={supabase} user={user} />
-            
             <ProgressHeatmap supabase={supabase} user={user} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -155,11 +148,7 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
                     </div>
                     <div className="flex-shrink-0 flex items-center gap-4">
                         <button onClick={() => setActiveDashboardPage('panduan')} className="text-sm font-medium text-slate-500 hover:text-emerald-700">Baca Panduan</button>
-                        <button
-                            onClick={() => setActiveDashboardPage('standard-compliance')}
-                            className="w-full md:w-auto px-6 py-3 text-base font-semibold text-white rounded-lg transition-colors flex items-center gap-2"
-                            style={{backgroundColor: '#3f545f'}}
-                        >
+                        <button onClick={() => setActiveDashboardPage('standard-compliance')} className="w-full md:w-auto px-6 py-3 text-base font-semibold text-white rounded-lg transition-colors flex items-center gap-2" style={{backgroundColor: '#3f545f'}}>
                             <ShieldCheckIcon />
                             Lihat Standar Kepatuhan
                         </button>
