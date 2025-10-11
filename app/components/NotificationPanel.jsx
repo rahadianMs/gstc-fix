@@ -21,8 +21,8 @@ function TimeAgo({ date }) {
     return 'Baru saja';
 }
 
-// PERBAIKAN: Menghapus prop onMarkAllAsRead
-export default function NotificationPanel({ notifications, onClose, onNotificationClick }) {
+// --- PERBAIKAN: Menambahkan props onMarkAllAsRead dan hasUnread ---
+export default function NotificationPanel({ notifications, onClose, onNotificationClick, onMarkAllAsRead, hasUnread }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -32,7 +32,15 @@ export default function NotificationPanel({ notifications, onClose, onNotificati
         >
             <div className="flex justify-between items-center p-4 border-b">
                 <h3 className="font-bold text-lg text-slate-800">Notifikasi</h3>
-                {/* Tombol "Tandai semua dibaca" dihapus dari sini */}
+                {/* --- FITUR BARU: Tombol "Tandai semua dibaca" --- */}
+                {hasUnread && (
+                    <button 
+                        onClick={onMarkAllAsRead} 
+                        className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                        Tandai semua dibaca
+                    </button>
+                )}
             </div>
             <div className="max-h-96 overflow-y-auto">
                 {notifications.length > 0 ? (
@@ -42,12 +50,13 @@ export default function NotificationPanel({ notifications, onClose, onNotificati
                             onClick={() => onNotificationClick(notif)}
                             className="w-full text-left p-4 hover:bg-slate-50 border-b last:border-b-0 flex items-start gap-3"
                         >
-                            {/* Titik biru tetap ada sesaat sebelum state diperbarui */}
-                            {!notif.is_read && (
-                                <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
-                            )}
-                            <div className={`flex-1 ${notif.is_read ? 'pl-5' : ''}`}>
-                                <p className={`text-sm text-slate-800 font-semibold`}>
+                            <div className={`flex-shrink-0 mt-1.5 ${notif.is_read ? 'w-2.5' : ''}`}>
+                                {!notif.is_read && (
+                                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                                )}
+                            </div>
+                            <div className="flex-1">
+                                <p className={`text-sm text-slate-800 ${!notif.is_read ? 'font-bold' : 'font-medium'}`}>
                                     {notif.message}
                                 </p>
                                 <p className="text-xs text-slate-400 mt-1">

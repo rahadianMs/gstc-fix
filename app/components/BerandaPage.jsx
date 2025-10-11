@@ -14,10 +14,9 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
 
     const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
-    const [hasUnread, setHasUnread] = useState(false); // Ganti unreadCount dengan boolean
+    const [hasUnread, setHasUnread] = useState(false);
     const notificationRef = useRef(null);
 
-    // Cek apakah ada notifikasi yang belum dibaca
     useEffect(() => {
         setHasUnread(notifications.some(n => !n.is_read));
     }, [notifications]);
@@ -39,7 +38,10 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
             .channel('public:notifications')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, 
             (payload) => {
-                fetchNotifications(); 
+                setNotifications(currentNotifications => [
+                    payload.new,
+                    ...currentNotifications
+                ]);
             })
             .subscribe();
 
@@ -57,34 +59,39 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
         fetchProfile();
     }, [user, supabase, dataVersion]);
 
-    const handleNotificationClick = async (notification) => {
+    const handleNotificationClick = (notification) => {
         if (notification.link_to) {
             setActiveDashboardPage(notification.link_to);
         }
         setIsNotificationPanelOpen(false);
     };
 
-    // --- LOGIKA BARU UNTUK KLIK LONCENG ---
     const handleBellClick = () => {
-        // Balik status visibilitas panel
-        const panelWillBeOpen = !isNotificationPanelOpen;
-        setIsNotificationPanelOpen(panelWillBeOpen);
+        setIsNotificationPanelOpen(prev => !prev);
+    };
 
-        // Jika panel akan dibuka dan ada notifikasi belum dibaca, jalankan "mark all as read"
-        if (panelWillBeOpen && hasUnread) {
-            // 1. Update UI secara optimis agar tidak ada delay visual
-            setNotifications(current => current.map(n => ({ ...n, is_read: true })));
-            
-            // 2. Kirim perintah update ke database di latar belakang
-            supabase
-                .from('notifications')
-                .update({ is_read: true })
-                .eq('user_id', user.id)
-                .eq('is_read', false)
-                .then(({ error }) => {
-                    // Jika gagal, ambil ulang data untuk memastikan konsistensi
-                    if (error) fetchNotifications();
-                });
+    const handleMarkAllAsRead = async () => {
+        // Simpan ID notifikasi yang belum dibaca sebelum state diubah
+        const unreadNotificationIds = notifications
+            .filter(n => !n.is_read)
+            .map(n => n.id);
+
+        // Jika tidak ada yang perlu diupdate, jangan lakukan apa-apa
+        if (unreadNotificationIds.length === 0) return;
+
+        // Update UI secara optimis
+        setNotifications(current => current.map(n => ({ ...n, is_read: true })));
+
+        // Kirim perintah update ke database
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .in('id', unreadNotificationIds);
+
+        // Jika gagal, kembalikan state UI ke semula dan muat ulang data dari server
+        if (error) {
+            console.error("Gagal menandai semua notifikasi sebagai dibaca:", error);
+            fetchNotifications(); 
         }
     };
 
@@ -108,12 +115,11 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
             >
                 <div ref={notificationRef}>
                     <button 
-                        onClick={handleBellClick} // Ganti handler di sini
+                        onClick={handleBellClick}
                         className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors z-10"
                         title="Lihat Notifikasi"
                     >
                         <BellIcon />
-                        {/* Ganti badge angka menjadi titik sederhana */}
                         {hasUnread && (
                             <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
                         )}
@@ -124,6 +130,8 @@ export default function BerandaPage({ user, supabase, setActiveDashboardPage, da
                                 notifications={notifications}
                                 onClose={() => setIsNotificationPanelOpen(false)}
                                 onNotificationClick={handleNotificationClick}
+                                onMarkAllAsRead={handleMarkAllAsRead}
+                                hasUnread={hasUnread}
                             />
                         )}
                     </AnimatePresence>
