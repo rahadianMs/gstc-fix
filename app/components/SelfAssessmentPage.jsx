@@ -161,7 +161,6 @@ const SummaryGauge = ({ value, color }) => {
     );
 };
 
-// --- PERUBAHAN 1: Tampilan Progress Bar Kriteria ---
 const CriterionProgressBar = ({ title, score, color }) => (
     <div className="grid grid-cols-12 gap-4 items-center">
         <div className="col-span-4 text-sm font-semibold text-slate-700">{title}</div>
@@ -203,7 +202,6 @@ export default function SelfAssessmentPage({ supabase, user }) {
         D: { name: 'Lingkungan', color: '#10B981' }
     };
 
-    // --- PERUBAHAN 2: Warna Opsi Jawaban ---
     const answerOptionStyles = [
         { text: 'Belum tersedia', score: 0, checked: 'bg-red-700 border-red-800 text-white', hover: 'hover:bg-red-100' },
         { text: 'Dokumen ada, belum implementasi', score: 1, checked: 'bg-orange-600 border-orange-700 text-white', hover: 'hover:bg-orange-100' },
@@ -238,7 +236,13 @@ export default function SelfAssessmentPage({ supabase, user }) {
     }, [supabase, user]);
 
     const startAssessment = (pillar) => {
-        const criteria = [...new Set(questions.filter(q => q.pillar === pillar).map(q => q.criterion_code))].sort();
+        const criteria = [...new Set(questions.filter(q => q.pillar === pillar).map(q => q.criterion_code))]
+            .sort((a, b) => {
+                const numA = parseInt(a.split('.')[1]);
+                const numB = parseInt(b.split('.')[1]);
+                return numA - numB;
+            });
+
         setCurrentPillar(pillar);
         setCriteriaForPillar(criteria);
         setCurrentCriterionIndex(0);
@@ -313,7 +317,11 @@ export default function SelfAssessmentPage({ supabase, user }) {
     const calculateScoresForSummary = (pillar) => {
         const overallScore = pillarAssessments[pillar]?.score || 0;
         const scoreMap = [0, 1, 1, 2];
-        const criteriaInPillar = [...new Set(questions.filter(q => q.pillar === pillar).map(q => q.criterion_code))].sort();
+        const criteriaInPillar = [...new Set(questions.filter(q => q.pillar === pillar).map(q => q.criterion_code))].sort((a, b) => {
+            const numA = parseInt(a.split('.')[1]);
+            const numB = parseInt(b.split('.')[1]);
+            return numA - numB;
+        });
         const criteriaScores = criteriaInPillar.map(code => {
             const questionsInCriterion = questions.filter(q => q.criterion_code === code);
             let totalActualScore = 0;
@@ -415,7 +423,16 @@ export default function SelfAssessmentPage({ supabase, user }) {
     const renderAssessmentView = () => {
         if (!currentPillar) return null;
         const criterionCode = criteriaForPillar[currentCriterionIndex];
-        const questionsInGroup = questions.filter(q => q.criterion_code === criterionCode);
+        
+        // --- PERBAIKAN UTAMA DI SINI ---
+        const questionsInGroup = questions
+            .filter(q => q.criterion_code === criterionCode)
+            .sort((a, b) => {
+                // Mengurutkan berdasarkan 'question_id' secara alami
+                return a.question_id.localeCompare(b.question_id, undefined, { numeric: true, sensitivity: 'base' });
+            });
+        // --- AKHIR PERBAIKAN ---
+        
         const firstQ = questionsInGroup[0];
         const config = pillarConfig[currentPillar];
 
@@ -450,7 +467,7 @@ export default function SelfAssessmentPage({ supabase, user }) {
                         {questionsInGroup.map(q => (
                             <div key={q.id} className="border-t pt-6">
                                 <p className="font-semibold text-gray-800 text-lg">{q.question_text}</p>
-                                <p className="text-sm text-gray-500 mt-2 italic"><strong className="font-semibold">Rekomendasi:</strong> {q.recommendation}</p>
+                                <p className="text-sm text-gray-500 mt-2 italic"><strong className="font-semibold">Contoh Bukti Dukung:</strong> {q.example_evidence}</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
                                     {answerOptionStyles.map((opt) => (
                                         <div key={opt.score} className="flex-1">
