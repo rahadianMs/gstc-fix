@@ -1,9 +1,18 @@
+// app/components/SelfAssessmentPage.jsx
 "use client";
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 
 // --- Komponen-komponen ---
+
+// --- BARU: Ikon Chevron untuk Accordion ---
+const ChevronDownIcon = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className={className}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+);
+
 
 // Komponen Gauge Chart Kecil untuk Dasbor Ringkasan
 const PillarGauge = ({ score = 0, color, pillarName }) => {
@@ -193,6 +202,9 @@ export default function SelfAssessmentPage({ supabase, user }) {
     const [currentPillar, setCurrentPillar] = useState(null);
     const [criteriaForPillar, setCriteriaForPillar] = useState([]);
     const [currentCriterionIndex, setCurrentCriterionIndex] = useState(0);
+    
+    // --- BARU: State untuk mengontrol accordion deskripsi ---
+    const [openDescriptionId, setOpenDescriptionId] = useState(null);
 
     const primaryColor = '#1c3d52';
     const pillarConfig = {
@@ -203,10 +215,10 @@ export default function SelfAssessmentPage({ supabase, user }) {
     };
 
     const answerOptionStyles = [
-        { text: 'Belum tersedia', score: 0, checked: 'bg-red-700 border-red-800 text-white', hover: 'hover:bg-red-100' },
-        { text: 'Dokumen ada, belum implementasi', score: 1, checked: 'bg-orange-600 border-orange-700 text-white', hover: 'hover:bg-orange-100' },
-        { text: 'Diterapkan sebagian', score: 2, checked: 'bg-yellow-500 border-yellow-600 text-white', hover: 'hover:bg-yellow-100' },
-        { text: 'Diterapkan penuh & konsisten', score: 3, checked: 'bg-green-600 border-green-700 text-white', hover: 'hover:bg-green-100' }
+        { text: 'Belum tersedia', choiceValue: 0, checked: 'bg-red-700 border-red-800 text-white', hover: 'hover:bg-red-100' },
+        { text: 'Sudah ada dokumen/kebijakan, namun belum diimplementasikan', choiceValue: 1, checked: 'bg-yellow-500 border-yellow-600 text-white', hover: 'hover:bg-yellow-100' },
+        { text: 'Sudah diterapkan sebagian (praktik berjalan meskipun belum terdokumentasi penuh)', choiceValue: 2, checked: 'bg-yellow-500 border-yellow-600 text-white', hover: 'hover:bg-yellow-100' },
+        { text: 'Sudah diterapkan secara penuh dan konsisten, dengan bukti dokumentasi', choiceValue: 3, checked: 'bg-green-600 border-green-700 text-white', hover: 'hover:bg-green-100' }
     ];
 
     useEffect(() => {
@@ -254,15 +266,15 @@ export default function SelfAssessmentPage({ supabase, user }) {
         setView('summary');
     };
 
-    const handleAnswerChange = async (questionId, score) => {
-        const newAnswers = { ...answers, [questionId]: score };
+    const handleAnswerChange = async (questionId, choiceValue) => {
+        const newAnswers = { ...answers, [questionId]: choiceValue };
         setAnswers(newAnswers);
         if (pillarAssessments[currentPillar]?.status !== 'in_progress') {
             const newAssessments = { ...pillarAssessments, [currentPillar]: { status: 'in_progress', score: 0 } };
             setPillarAssessments(newAssessments);
             await supabase.from('pillar_assessments').upsert({ destination_id: user.id, pillar: currentPillar, status: 'in_progress' }, { onConflict: 'destination_id, pillar' });
         }
-        await supabase.from('self_assessment_answers').upsert({ destination_id: user.id, question_id: questionId, answer_score: score }, { onConflict: 'destination_id, question_id' });
+        await supabase.from('self_assessment_answers').upsert({ destination_id: user.id, question_id: questionId, answer_score: choiceValue }, { onConflict: 'destination_id, question_id' });
     };
 
     const areCurrentCriterionQuestionsAnswered = () => {
@@ -279,6 +291,7 @@ export default function SelfAssessmentPage({ supabase, user }) {
         const newIndex = currentCriterionIndex + direction;
         if (newIndex >= 0 && newIndex < criteriaForPillar.length) {
             setCurrentCriterionIndex(newIndex);
+            setOpenDescriptionId(null); // Tutup accordion saat pindah kriteria
         }
     };
 
@@ -290,7 +303,7 @@ export default function SelfAssessmentPage({ supabase, user }) {
         const confirmation = window.confirm("Apakah Anda yakin ingin menyelesaikan dan mengunci jawaban untuk pilar ini?\n\nSetelah disubmit, jawaban tidak dapat diubah lagi dan akan menjadi bahan pertimbangan konsultan dalam mengambil keputusan.");
         if (confirmation) {
             setLoading(true);
-            const scoreMap = [0, 1, 1, 2];
+            const scoreMap = [0, 1, 1, 2]; 
             let totalActualScore = 0;
             const questionsInPillar = questions.filter(q => q.pillar === currentPillar);
             questionsInPillar.forEach(q => { if (answers[q.id] !== undefined) { totalActualScore += scoreMap[answers[q.id]]; } });
@@ -316,7 +329,7 @@ export default function SelfAssessmentPage({ supabase, user }) {
 
     const calculateScoresForSummary = (pillar) => {
         const overallScore = pillarAssessments[pillar]?.score || 0;
-        const scoreMap = [0, 1, 1, 2];
+        const scoreMap = [0, 1, 1, 2]; 
         const criteriaInPillar = [...new Set(questions.filter(q => q.pillar === pillar).map(q => q.criterion_code))].sort((a, b) => {
             const numA = parseInt(a.split('.')[1]);
             const numB = parseInt(b.split('.')[1]);
@@ -328,7 +341,8 @@ export default function SelfAssessmentPage({ supabase, user }) {
             questionsInCriterion.forEach(q => { if (answers[q.id] !== undefined) { totalActualScore += scoreMap[answers[q.id]]; } });
             const maxPossibleScore = questionsInCriterion.length * 2;
             const score = maxPossibleScore > 0 ? (totalActualScore / maxPossibleScore) * 100 : 0;
-            return { title: questionsInCriterion[0].criterion_title, score: score };
+            const criterionTitle = questionsInCriterion.length > 0 ? questionsInCriterion[0].criterion_title : code;
+            return { title: criterionTitle, score: score };
         });
         return { overallScore, criteriaScores };
     };
@@ -424,17 +438,15 @@ export default function SelfAssessmentPage({ supabase, user }) {
         if (!currentPillar) return null;
         const criterionCode = criteriaForPillar[currentCriterionIndex];
         
-        // --- PERBAIKAN UTAMA DI SINI ---
         const questionsInGroup = questions
             .filter(q => q.criterion_code === criterionCode)
             .sort((a, b) => {
-                // Mengurutkan berdasarkan 'question_id' secara alami
                 return a.question_id.localeCompare(b.question_id, undefined, { numeric: true, sensitivity: 'base' });
             });
-        // --- AKHIR PERBAIKAN ---
         
         const firstQ = questionsInGroup[0];
         const config = pillarConfig[currentPillar];
+        const isDescriptionOpen = openDescriptionId === firstQ.id;
 
         return (
             <div className="container mx-auto px-4 md:px-8 max-w-5xl py-8">
@@ -455,13 +467,38 @@ export default function SelfAssessmentPage({ supabase, user }) {
                 </div>
 
                 <div className="bg-white p-8 md:p-10 rounded-2xl shadow-lg">
-                    <div className="flex items-start mb-6">
-                        <div className="flex-shrink-0 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl" style={{backgroundColor: config.color}}>{criterionCode}</div>
-                        <div className="ml-4">
-                            <h3 className="text-2xl font-bold text-gray-800">{firstQ.criterion_title}</h3>
-                            <p className="text-sm text-gray-500 mt-1">{firstQ.criterion_description}</p>
-                        </div>
+                    {/* --- PERBAIKAN 3: IMPLEMENTASI ACCORDION --- */}
+                    <div className="mb-6">
+                        <button
+                            onClick={() => setOpenDescriptionId(isDescriptionOpen ? null : firstQ.id)}
+                            className="w-full flex items-start text-left gap-4 cursor-pointer"
+                        >
+                            <div className="flex-shrink-0 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl" style={{backgroundColor: config.color}}>{criterionCode}</div>
+                            <div className="flex-1 pt-1">
+                                <h3 className="text-2xl font-bold text-gray-800">{firstQ.criterion_title}</h3>
+                            </div>
+                            <div className="pt-3">
+                                <ChevronDownIcon className={`w-6 h-6 text-slate-400 transition-transform duration-300 ${isDescriptionOpen ? 'rotate-180' : ''}`} />
+                            </div>
+                        </button>
+
+                        <AnimatePresence>
+                            {isDescriptionOpen && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                                    animate={{ height: 'auto', opacity: 1, marginTop: '16px' }}
+                                    exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="pl-16 text-sm text-slate-600 bg-slate-50 p-4 rounded-lg border">
+                                        {firstQ.criterion_description}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
+                    {/* --- AKHIR DARI PERBAIKAN ACCORDION --- */}
 
                     <div className="space-y-8 mt-4">
                         {questionsInGroup.map(q => (
@@ -470,9 +507,9 @@ export default function SelfAssessmentPage({ supabase, user }) {
                                 <p className="text-sm text-gray-500 mt-2 italic"><strong className="font-semibold">Contoh Bukti Dukung:</strong> {q.example_evidence}</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
                                     {answerOptionStyles.map((opt) => (
-                                        <div key={opt.score} className="flex-1">
-                                            <input type="radio" name={`q-${q.id}`} value={opt.score} id={`q-${q.id}-${opt.score}`} className="sr-only peer" checked={answers[q.id] === opt.score} onChange={() => handleAnswerChange(q.id, opt.score)} />
-                                            <label htmlFor={`q-${q.id}-${opt.score}`} className={`flex flex-col items-center justify-center text-center h-full cursor-pointer p-3 text-gray-700 border rounded-lg transition-colors duration-200 ${answers[q.id] === opt.score ? opt.checked : `bg-white ${opt.hover}`}`}>
+                                        <div key={opt.choiceValue} className="flex-1">
+                                            <input type="radio" name={`q-${q.id}`} value={opt.choiceValue} id={`q-${q.id}-${opt.choiceValue}`} className="sr-only peer" checked={answers[q.id] === opt.choiceValue} onChange={() => handleAnswerChange(q.id, opt.choiceValue)} />
+                                            <label htmlFor={`q-${q.id}-${opt.choiceValue}`} className={`flex flex-col items-center justify-center text-center h-full cursor-pointer p-3 text-gray-700 border rounded-lg transition-colors duration-200 ${answers[q.id] === opt.choiceValue ? opt.checked : `bg-white ${opt.hover}`}`}>
                                                 <span className="text-sm font-medium">{opt.text}</span>
                                             </label>
                                         </div>
