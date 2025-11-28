@@ -53,18 +53,20 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
+            
+            // --- PERBAIKAN DI SINI: Mengambil semua kolom (*) dari evidence_submissions ---
+            // Sebelumnya hanya (status), sehingga consultant_comment tidak terambil
             const { data, error } = await supabase
                 .from('gstc_criteria')
                 .select(`
                     *,
                     gstc_sub_indicators (
                         *,
-                        evidence_submissions ( status )
+                        evidence_submissions ( * ) 
                     )
                 `)
                 .eq('pillar', pillar)
                 .eq('gstc_sub_indicators.evidence_submissions.destination_id', user.id)
-                // Kita tetap mengurutkan di sini sebagai urutan dasar
                 .order('criterion_code'); 
             
             if (error) {
@@ -127,7 +129,6 @@ export default function PillarDetailPage({ pillar, supabase, user }) {
                                 <ProgressBar value={progressValue} title="Progress Bagian" />
 
                                 <div className="mt-8 space-y-4">
-                                    {/* --- PERBAIKAN UTAMA DI SINI --- */}
                                     {data.criteria
                                         .sort((a, b) => {
                                             const numA = parseInt(a.criterion_code.substring(1));
