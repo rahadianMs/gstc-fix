@@ -1,8 +1,8 @@
-// app/components/PembelajaranPage.jsx
 "use client";
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation'; // Import Router
+import { motion } from 'framer-motion';
 
 // --- Komponen Ikon ---
 const PlayIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" /></svg>;
@@ -15,7 +15,7 @@ const colors = { brandDark: '#1c3d52', brandYellow: '#e8c458' };
 const DocumentCard = ({ course, onOpen }) => (
     <div className="bg-white rounded-lg shadow-sm border border-slate-200/80 overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
         <div className="relative w-full aspect-[4/5] overflow-hidden">
-            <img src={course.image_url || 'https://images.unsplash.com/photo-1517480448885-d5c53555ba8c?q=80&w=899&auto=format&fit=crop'} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+            <img src={course.image_url || 'https://images.unsplash.com/photo-1517480448885-d5c53555ba8c?q=80&w=899&auto-format&fit=crop'} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
             <div className="absolute top-3 right-3 p-1.5 rounded-full bg-black/40 backdrop-blur-sm">
                 {course.type === 'pdf' ? <BookOpenIcon className="w-5 h-5 text-white" /> : <GlobeAltIcon className="w-5 h-5 text-white" />}
             </div>
@@ -44,7 +44,6 @@ const VideoListItem = ({ course, onOpen }) => (
         <div className="p-5 flex-grow flex flex-col">
             <span className="text-xs font-bold uppercase tracking-wider" style={{ color: colors.brandYellow }}>{course.category || 'Video'}</span>
             <h3 className="text-lg font-bold text-slate-800 mt-1">{course.title}</h3>
-            {/* --- PERUBAHAN DI SINI: line-clamp untuk deskripsi singkat --- */}
             <p className="text-sm text-slate-500 mt-2 flex-grow line-clamp-2">{course.description}</p>
             <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-200/80">
                 <button onClick={() => onOpen(course)} className="text-sm font-semibold text-white rounded-md px-5 py-2 transition-colors" style={{ backgroundColor: colors.brandDark }}>
@@ -56,8 +55,9 @@ const VideoListItem = ({ course, onOpen }) => (
     </div>
 );
 
-
-export default function PembelajaranPage({ supabase, user, userRole, setActiveDashboardPage }) {
+// Hapus prop setActiveDashboardPage
+export default function PembelajaranPage({ supabase, user, userRole }) {
+    const router = useRouter();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -73,11 +73,17 @@ export default function PembelajaranPage({ supabase, user, userRole, setActiveDa
 
     const handleOpen = (course) => {
         if (course.type === 'video') {
-            setActiveDashboardPage({ page: 'video-detail', resourceId: course.id });
+            // PERBAIKAN: Gunakan router.push ke URL dinamis
+            router.push(`/dashboard/resources/${course.id}`);
         } else {
             window.open(course.resource_url, '_blank', 'noopener,noreferrer');
         }
     };
+
+    const handleManage = () => {
+        // PERBAIKAN: Gunakan router.push ke halaman manage
+        router.push('/dashboard/resources/manage');
+    }
 
     const videos = courses.filter(course => course.type === 'video');
     const documents = courses.filter(course => course.type === 'pdf' || course.type === 'website');
@@ -90,7 +96,7 @@ export default function PembelajaranPage({ supabase, user, userRole, setActiveDa
                     <p className="mt-2 text-lg text-slate-600">Perkaya pengetahuan Anda dengan materi pilihan dari para ahli.</p>
                 </div>
                 {userRole === 'consultant' && (
-                    <button onClick={() => setActiveDashboardPage('resource-admin')} className="px-5 py-3 font-semibold text-white rounded-lg shadow-md transition-transform active:scale-95" style={{backgroundColor: colors.brandDark}}>
+                    <button onClick={handleManage} className="px-5 py-3 font-semibold text-white rounded-lg shadow-md transition-transform active:scale-95" style={{backgroundColor: colors.brandDark}}>
                         Kelola Materi
                     </button>
                 )}

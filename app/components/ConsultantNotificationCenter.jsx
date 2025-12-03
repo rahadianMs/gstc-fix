@@ -1,7 +1,7 @@
-// app/components/ConsultantNotificationCenter.jsx
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation'; // <-- 1. Import Router
 import { BellIcon } from './Icons';
 
 const TrashIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>;
@@ -22,7 +22,9 @@ function TimeAgo({ date }) {
     return 'Baru saja';
 }
 
-export default function ConsultantNotificationCenter({ supabase, user, setActiveDashboardPage }) {
+// Hapus prop setActiveDashboardPage
+export default function ConsultantNotificationCenter({ supabase, user }) {
+    const router = useRouter(); // <-- 2. Inisialisasi Router
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -56,32 +58,57 @@ export default function ConsultantNotificationCenter({ supabase, user, setActive
         return () => supabase.removeChannel(channel);
     }, [supabase, user, fetchNotifications]);
 
+    // --- 3. PERBAIKAN LOGIKA KLIK NOTIFIKASI ---
     const handleNotificationClick = async (notification) => {
+        // Mapping halaman lama ke URL baru untuk Konsultan
+        const linkMap = {
+            'home': '/dashboard/consultant',
+            'review-compliance': '/dashboard/consultant/review',
+            'action-plan': '/dashboard/action-plan',
+            'booking-session': '/dashboard/bookings',
+            'pembelajaran': '/dashboard/resources',
+            'resource-admin': '/dashboard/resources',
+            'panduan': '/dashboard/guide'
+        };
+
+        const linkKey = notification.link_to || '';
+        let targetUrl = '/dashboard/consultant'; // Default ke home konsultan
+
+        if (linkMap[linkKey]) {
+            targetUrl = linkMap[linkKey];
+        } else if (linkKey.startsWith('review/')) {
+            // Jika notifikasi berisi ID spesifik (misal: review/123), arahkan langsung
+            targetUrl = `/dashboard/consultant/${linkKey}`;
+        } else if (linkKey) {
+            // Fallback: coba jadikan path langsung
+            targetUrl = `/dashboard/${linkKey}`;
+        }
+
+        // Navigasi ke URL baru
+        router.push(targetUrl);
+
+        // Tandai sebagai sudah dibaca
         if (!notification.is_read) {
             setNotifications(current => current.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
             await supabase.from('notifications').update({ is_read: true }).eq('id', notification.id);
         }
-        if (notification.link_to) {
-            setActiveDashboardPage(notification.link_to);
-        }
     };
+    // ---------------------------------------------
     
     const handleDeleteNotification = async (notificationId, event) => {
         event.stopPropagation();
         
-        // --- PERBAIKAN UTAMA DI SINI ---
-        // Panggil fungsi database 'delete_notification' via RPC
         const { error } = await supabase.rpc('delete_notification', {
             p_notification_id: notificationId
         });
         
         if (error) {
             console.error("RPC Error:", error);
-            alert("Gagal menghapus notifikasi. Silakan coba lagi.");
-        } else {
-            // Jika berhasil, perbarui state UI
-            setNotifications(current => current.filter(n => n.id !== notificationId));
+            // Fallback delete manual jika RPC tidak ada/gagal
+            await supabase.from('notifications').delete().eq('id', notificationId);
         }
+        
+        setNotifications(current => current.filter(n => n.id !== notificationId));
     };
 
     return (

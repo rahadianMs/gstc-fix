@@ -22,7 +22,7 @@ const ProfileView = memo(function ProfileView({ initialData, user, userRole }) {
             </dl>
         );
     }
-    // ... (sisa komponen ProfileView tidak berubah)
+    
     return (
         <dl className="divide-y divide-slate-200">
             <ProfileDataItem label="Email" value={user.email} />
@@ -64,7 +64,7 @@ const ProfileView = memo(function ProfileView({ initialData, user, userRole }) {
 
 
 // ============================================================================
-// KOMPONEN FORM YANG DIPisah (BARU)
+// KOMPONEN FORM YANG DIPISAH
 // ============================================================================
 const formInputClass = "w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3f545f]";
 const formSelectClass = "w-full p-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#3f545f]";
@@ -84,14 +84,31 @@ const IdentitySection = memo(({ formData, handleChange, userRole }) => (
             <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Tipe Organisasi *</label>
                 <select name="organization_type" value={formData.organization_type || ''} onChange={handleChange} required className={formSelectClass}>
-                    <option value="">Pilih Tipe</option><option>Dinas Pariwisata Kabupaten/Kota/Provinsi</option><option>Badan Otorita Kawasan Pariwisata</option><option>Badan Usaha Milik Daerah (BUMD) bidang pariwisata</option><option>Badan Pengelola Kawasan (misalnya taman wisata, geopark, kawasan konservasi)</option><option>Lembaga Swadaya Masyarakat / Yayasan / Asosiasi Pariwisata</option><option>Kelompok Sadar Wisata (Pokdarwis) atau komunitas pariwisata</option><option>BUMDes atau lembaga pengelola desa wisata</option><option>Asosiasi Industri Pariwisata (PHRI, ASITA, HPI, dsb.)</option><option>Forum/Organisasi Pengelola Destinasi (Destination Management Organization / DMO)</option><option>Unit kerja di bawah Kementerian/Lembaga</option><option value="other">Yang lain</option>
+                    <option value="">Pilih Tipe</option>
+                    <option>Dinas Pariwisata Kabupaten/Kota/Provinsi</option>
+                    <option>Badan Otorita Kawasan Pariwisata</option>
+                    {/* Perubahan Opsi BUMD/BUMN */}
+                    <option>Badan Usaha Milik Daerah (BUMD) / Badan Usaha Milik Negara (BUMN) bidang pariwisata</option>
+                    <option>Badan Pengelola Kawasan (misalnya taman wisata, geopark, kawasan konservasi)</option>
+                    <option>Lembaga Swadaya Masyarakat / Yayasan / Asosiasi Pariwisata</option>
+                    <option>Kelompok Sadar Wisata (Pokdarwis) atau komunitas pariwisata</option>
+                    <option>BUMDes atau lembaga pengelola desa wisata</option>
+                    <option>Asosiasi Industri Pariwisata (PHRI, ASITA, HPI, dsb.)</option>
+                    <option>Forum/Organisasi Pengelola Destinasi (Destination Management Organization / DMO)</option>
+                    <option>Unit kerja di bawah Kementerian/Lembaga</option>
+                    <option value="other">Yang lain</option>
                 </select>
             </div>
             {formData.organization_type === 'other' && <input type="text" name="other_organization_type" placeholder="Sebutkan tipe organisasi Anda" value={formData.other_organization_type || ''} onChange={handleChange} className={`${formInputClass} mt-2`} />}
             <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Area Manajemen *</label>
                 <select name="management_area" value={formData.management_area || ''} onChange={handleChange} required className={formSelectClass}>
-                    <option value="">Pilih Area</option><option>Negara</option><option>Provinsi</option><option>Kabupaten/Kota</option><option>Kawasan/Regional</option><option value="other">Yang lain</option>
+                    <option value="">Pilih Area</option>
+                    <option>Negara</option>
+                    <option>Provinsi</option>
+                    <option>Kabupaten/Kota</option>
+                    <option>Kawasan/Regional</option>
+                    <option value="other">Yang lain</option>
                 </select>
             </div>
             {formData.management_area === 'other' && <input type="text" name="other_management_area" placeholder="Sebutkan area manajemen Anda" value={formData.other_management_area || ''} onChange={handleChange} className={`${formInputClass} mt-2`} />}
@@ -163,7 +180,7 @@ const SustainabilitySection = memo(({ formData, handleChange }) => (
 ));
 
 // ============================================================================
-// KOMPONEN FORM UTAMA (DIREFAKTOR)
+// KOMPONEN FORM UTAMA
 // ============================================================================
 const ProfileForm = memo(function ProfileForm({ formData, setFormData, onSave, onCancel, loading, userRole }) {
     
@@ -206,7 +223,7 @@ const ProfileForm = memo(function ProfileForm({ formData, setFormData, onSave, o
 });
 
 // ============================================================================
-// KOMPONEN UTAMA HALAMAN (Tidak Berubah Banyak)
+// KOMPONEN UTAMA HALAMAN
 // ============================================================================
 export default function AccountPage({ user, supabase }) {
     const [pageStatus, setPageStatus] = useState('loading');

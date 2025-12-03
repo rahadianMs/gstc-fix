@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // <-- Import useRouter
 import { BookOpenIcon, DashboardIcon, HandshakeIcon, ClipboardCheckIcon, ChatBubbleIcon, InstagramIcon, LinkedinIcon, FacebookIcon } from './Icons.jsx';
 
-export default function LandingPage({ setActivePage, setIsLogin }) {
+export default function LandingPage() {
+    // <-- Hapus props setActivePage & setIsLogin
+    const router = useRouter(); // <-- Inisialisasi Router
     const [isScrolled, setIsScrolled] = useState(false);
 
     const logoWiseSteps = "https://github.com/rahadianMs/gstc-fix/blob/main/asset/WSG_Masterfiles_Logo-02-1024x264.png?raw=true";
@@ -17,9 +20,9 @@ export default function LandingPage({ setActivePage, setIsLogin }) {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const handleGoToAuth = (showLogin) => {
-        setIsLogin(showLogin);
-        setActivePage('auth');
+    // Fungsi navigasi baru: Langsung pindah ke URL /login
+    const handleGoToAuth = () => {
+        router.push('/login');
     };
 
     const colors = {
@@ -69,12 +72,12 @@ export default function LandingPage({ setActivePage, setIsLogin }) {
                             <a href="#home" className={`font-medium transition-colors duration-200 ${isScrolled ? `text-zinc-600 hover:text-[${colors.brand}]` : 'text-white hover:opacity-80'}`}>Home</a>
                             <a href="#about" className={`font-medium transition-colors duration-200 ${isScrolled ? `text-zinc-600 hover:text-[${colors.brand}]` : 'text-white hover:opacity-80'}`}>Tentang</a>
                             <a href="#features" className={`font-medium transition-colors duration-200 ${isScrolled ? `text-zinc-600 hover:text-[${colors.brand}]` : 'text-white hover:opacity-80'}`}>Fitur</a>
-                            <button onClick={() => handleGoToAuth(true)} className={`px-5 py-2 font-semibold border-2 rounded-lg transition-all duration-300 ${isScrolled ? `text-[${colors.brand}] border-[${colors.brand}] hover:bg-zinc-100` : 'text-white border-white hover:bg-white/10'}`}>
+                            <button onClick={handleGoToAuth} className={`px-5 py-2 font-semibold border-2 rounded-lg transition-all duration-300 ${isScrolled ? `text-[${colors.brand}] border-[${colors.brand}] hover:bg-zinc-100` : 'text-white border-white hover:bg-white/10'}`}>
                                 Login
                             </button>
                         </nav>
                          <div className="md:hidden">
-                            <button onClick={() => handleGoToAuth(true)} style={{backgroundColor: colors.accent, color: 'white'}} className="px-4 py-2 font-semibold rounded-lg">Login</button>
+                            <button onClick={handleGoToAuth} style={{backgroundColor: colors.accent, color: 'white'}} className="px-4 py-2 font-semibold rounded-lg">Login</button>
                         </div>
                     </div>
                 </header>
@@ -84,7 +87,7 @@ export default function LandingPage({ setActivePage, setIsLogin }) {
                     <div className="relative z-10 container mx-auto max-w-3xl text-left">
                         <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-6 drop-shadow-lg">Sustainability Portal: Your Gateway to GSTC Certification</h1>
                         <p className="mb-8 text-lg md:text-xl opacity-95 max-w-2xl">Platform digital untuk asistensi, pemantauan, dan percepatan sertifikasi pariwisata berkelanjutan.</p>
-                        <button onClick={() => handleGoToAuth(false)} style={{ backgroundColor: colors.accent }} className={`px-8 py-4 text-lg font-semibold text-white rounded-lg shadow-xl hover:bg-[${colors.accentHover}] transform hover:-translate-y-1 transition-all duration-300`}>
+                        <button onClick={handleGoToAuth} style={{ backgroundColor: colors.accent }} className={`px-8 py-4 text-lg font-semibold text-white rounded-lg shadow-xl hover:bg-[${colors.accentHover}] transform hover:-translate-y-1 transition-all duration-300`}>
                             Mulai Assessment
                         </button>
                     </div>
@@ -97,7 +100,7 @@ export default function LandingPage({ setActivePage, setIsLogin }) {
                         </div>
                         <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
                             <div>
-                                <img src="https://images.unsplash.com/photo-1517480448885-d5c53555ba8c?q=80&w=899&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Sustainable Destination" className="rounded-2xl shadow-lg w-full object-cover aspect-[4/3]" />
+                                <img src="https://images.unsplash.com/photo-1517480448885-d5c53555ba8c?q=80&w=899&auto-format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Sustainable Destination" className="rounded-2xl shadow-lg w-full object-cover aspect-[4/3]" />
                             </div>
                             <div className="space-y-6 text-zinc-600 leading-relaxed text-justify">
                                 <p>Sustainability Portal adalah platform digital yang dikembangkan oleh Wise Steps Consulting untuk membantu pelaku pariwisata dan konsultan menjalankan proses sertifikasi berdasarkan standar Global Sustainable Tourism Council (GSTC) secara lebih mudah, terstruktur, dan transparan.</p>

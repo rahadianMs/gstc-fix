@@ -1,14 +1,16 @@
-// app/components/VideoDetailPage.jsx
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation'; // Import Router
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- Komponen Ikon ---
+// ... (Komponen Ikon dan CommentThread TETAP SAMA, salin dari file lama) ...
+// Saya singkat di sini untuk fokus ke perubahan:
+
 const PaperAirplaneIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>;
 
-// --- Komponen Komentar dengan Logika Level ---
 const CommentThread = ({ comment, user, userRole, onDelete, onReply, level = 0 }) => {
+    // ... (Isi sama persis seperti file sebelumnya) ...
     const canDelete = user.id === comment.sender_id || userRole === 'consultant';
     const senderName = comment.sender_role === 'consultant' ? (comment.sender_name || 'Konsultan') : (comment.sender_name || 'Destinasi');
     const isConsultant = comment.sender_role === 'consultant';
@@ -28,7 +30,6 @@ const CommentThread = ({ comment, user, userRole, onDelete, onReply, level = 0 }
                         <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{comment.message}</p>
                     </div>
                     <div className="flex items-center gap-4 mt-1 ml-2">
-                        {/* --- PERUBAHAN UTAMA: Tombol Balas hanya muncul di level 0 --- */}
                         {level === 0 && (
                             <button onClick={() => onReply({ id: comment.id, name: senderName })} className="text-xs text-slate-500 font-semibold hover:text-slate-800">
                                 Balas
@@ -42,7 +43,6 @@ const CommentThread = ({ comment, user, userRole, onDelete, onReply, level = 0 }
                     </div>
                 </div>
             </div>
-            {/* Render balasan dengan menaikkan levelnya */}
             {comment.replies && comment.replies.length > 0 && (
                 <div className="ml-8 mt-4 pl-4 border-l-2 space-y-4">
                     {comment.replies.map(reply => (
@@ -54,9 +54,9 @@ const CommentThread = ({ comment, user, userRole, onDelete, onReply, level = 0 }
     );
 };
 
-
-// --- Komponen Utama Halaman Detail Video ---
-export default function VideoDetailPage({ resourceId, supabase, user, userRole, setActiveDashboardPage }) {
+// Hapus prop setActiveDashboardPage
+export default function VideoDetailPage({ resourceId, supabase, user, userRole }) {
+    const router = useRouter(); // Init Router
     const [resource, setResource] = useState(null);
     const [comments, setComments] = useState([]);
     const [newMessage, setNewMessage] = useState('');
@@ -98,7 +98,6 @@ export default function VideoDetailPage({ resourceId, supabase, user, userRole, 
             });
             setComments(topLevelComments);
         }
-        
         setLoading(false);
     };
 
@@ -146,7 +145,8 @@ export default function VideoDetailPage({ resourceId, supabase, user, userRole, 
 
     return (
         <div className="max-w-4xl mx-auto">
-            <button onClick={() => setActiveDashboardPage('pembelajaran')} className="font-semibold text-sm mb-6" style={{color: '#1c3d52'}}>
+            {/* PERBAIKAN: Gunakan router.push */}
+            <button onClick={() => router.push('/dashboard/resources')} className="font-semibold text-sm mb-6" style={{color: '#1c3d52'}}>
                 &larr; Kembali ke Daftar Materi
             </button>
             <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-lg">

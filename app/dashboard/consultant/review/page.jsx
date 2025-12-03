@@ -1,0 +1,12 @@
+"use client";
+
+import { createClient } from '@supabase/supabase-js';
+import AdminDashboardPage from '@/app/components/AdminDashboardPage';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export default function ReviewListRoute() {
+    return <AdminDashboardPage supabase={supabase} />;
+}
