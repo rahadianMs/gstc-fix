@@ -20,9 +20,11 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
     const [loading, setLoading] = useState(true);
     const [selectedTask, setSelectedTask] = useState(null);
     
+    // State Filter
     const [filterStatus, setFilterStatus] = useState('all');
     const [filterPillar, setFilterPillar] = useState('all'); 
 
+    // State KHUSUS KONSULTAN
     const [clients, setClients] = useState([]);
     const [selectedClientId, setSelectedClientId] = useState(null); 
 
@@ -108,8 +110,12 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
     const handleTaskClick = (task) => setSelectedTask(task);
     const handleEditClick = () => setIsEditModalOpen(true);
 
+    // --- LOGIKA FILTER ---
     const filteredTasks = tasks.filter(t => {
-        const statusMatch = filterStatus === 'all' || t.status.replace(' ', '').toLowerCase() === filterStatus;
+        // Normalisasi status string (hapus spasi, lowercase) agar cocok dengan key
+        const statusKey = t.status.toLowerCase().replace(/\s+/g, '');
+        
+        const statusMatch = filterStatus === 'all' || statusKey === filterStatus;
         const pillarMatch = filterPillar === 'all' || t.gstc_criteria?.pillar === filterPillar;
         return statusMatch && pillarMatch;
     });
@@ -117,21 +123,21 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
     const stats = {
         total: tasks.length,
         done: tasks.filter(t => t.status === 'Done').length,
-        inProgress: tasks.filter(t => t.status === 'In Progress').length
+        waiting: tasks.filter(t => t.status === 'Waiting Verification').length
     };
 
     return (
         <div className="max-w-7xl mx-auto h-[calc(100vh-6rem)] flex flex-col pb-4">
             
-            {/* HEADER */}
+            {/* HEADER SECTION */}
             <div className="flex-shrink-0 mb-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-slate-800">Action Plan</h1>
                         <p className="text-slate-500 mt-1">
                             {userRole === 'consultant' 
-                                ? 'Kelola rencana aksi untuk klien Anda.' 
-                                : 'Kelola rencana aksi keberlanjutan Anda.'}
+                                ? 'Kelola dan verifikasi rencana aksi klien.' 
+                                : 'Kelola rencana aksi dan ajukan verifikasi.'}
                         </p>
                     </div>
 
@@ -155,22 +161,30 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                 {/* FILTER BAR */}
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
                     <div className="flex items-center gap-4 overflow-x-auto p-1">
+                        {/* Filter Status */}
                         <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
-                            {['all', 'todo', 'inprogress', 'done'].map((status) => (
+                            {[
+                                { key: 'all', label: 'Semua' },
+                                { key: 'todo', label: 'To Do' },
+                                { key: 'inprogress', label: 'In Progress' },
+                                { key: 'waitingverification', label: 'Done (Waiting)' }, 
+                                { key: 'done', label: 'Done' }
+                            ].map((item) => (
                                 <button
-                                    key={status}
-                                    onClick={() => setFilterStatus(status)}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all capitalize ${
-                                        filterStatus === status 
-                                        ? 'bg-[#1c3d52] text-white shadow-md' 
+                                    key={item.key}
+                                    onClick={() => setFilterStatus(item.key)}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all capitalize whitespace-nowrap ${
+                                        filterStatus === item.key 
+                                        ? 'bg-white text-[#1c3d52] shadow-sm' 
                                         : 'text-slate-500 hover:text-slate-700'
                                     }`}
                                 >
-                                    {status === 'todo' ? 'To Do' : status === 'inprogress' ? 'In Progress' : status === 'all' ? 'Semua Status' : status}
+                                    {item.label}
                                 </button>
                             ))}
                         </div>
 
+                        {/* Filter Pilar */}
                         <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
                             <FilterIcon className="text-slate-400" />
                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Filter Pilar:</span>
@@ -194,15 +208,16 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                     
                     <div className="flex items-center gap-4 px-4 text-sm font-medium text-slate-500 border-l border-slate-100 pl-6 hidden md:flex">
                         <span>Total: {stats.total}</span>
+                        {stats.waiting > 0 && <span className="text-amber-600 flex items-center gap-1 font-bold">Verifikasi: {stats.waiting}</span>}
                         <span className="text-green-600 flex items-center gap-1"><CheckCircleIcon /> Selesai: {stats.done}</span>
                     </div>
                 </div>
             </div>
 
-            {/* CONTENT */}
+            {/* CONTENT SECTION */}
             <div className="flex-1 min-h-0 flex gap-6 overflow-hidden">
                 
-                {/* Task List */}
+                {/* Task List (Left) */}
                 <div className={`flex-1 overflow-y-auto pr-2 space-y-3 pb-20 ${selectedTask ? 'hidden md:block' : ''}`}>
                     {loading ? (
                         <div className="text-center py-20 text-slate-400">Memuat tugas...</div>
@@ -217,9 +232,10 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                                 const isConsultantTask = task.creator?.role === 'consultant';
                                 const isDestinationUser = userRole === 'destination';
                                 
-                                // --- LOGIKA BARU: Hanya batasi 'Done' ---
-                                // Jika user adalah destinasi dan tugas dari konsultan, maka 'Done' dilarang
+                                // LOGIKA RESTRITKSI STATUS
                                 let restrictedStatus = [];
+                                // Jika User = Destinasi DAN Tugas = Dari Konsultan
+                                // Maka User TIDAK BOLEH pilih 'Done' (harus lewat Waiting Verification)
                                 if (isDestinationUser && isConsultantTask) {
                                     restrictedStatus = ['Done']; 
                                 }
@@ -243,7 +259,7 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                                                 <StatusSelector 
                                                     currentStatus={task.status} 
                                                     onStatusChange={(newStatus) => handleStatusChange(task.id, newStatus)}
-                                                    restrictedOptions={restrictedStatus} // <-- KIRIM DAFTAR DILARANG
+                                                    restrictedOptions={restrictedStatus}
                                                 />
                                             </div>
                                             
@@ -259,6 +275,7 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                                             {task.task_title}
                                         </h3>
                                         
+                                        {/* Badge Pilar */}
                                         {task.gstc_criteria?.pillar && (
                                             <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 mb-2 border border-slate-200">
                                                 Pilar {task.gstc_criteria.pillar} - {task.gstc_criteria.criterion_code}
@@ -285,7 +302,7 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                     )}
                 </div>
 
-                {/* Task Detail / Gantt Chart */}
+                {/* Task Detail / Gantt Chart (Right) */}
                 <div className={`flex-1 md:flex-[1.2] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full ${!selectedTask ? 'hidden md:flex' : ''}`}>
                     {selectedTask ? (
                         <TaskDetailPanel 
@@ -300,7 +317,11 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                         />
                     ) : (
                         <div className="flex-1 bg-slate-50 p-4 h-full overflow-hidden">
-                            <TaskGanttChart tasks={filteredTasks} />
+                            {/* INTEGRASI GANTT CHART */}
+                            <TaskGanttChart 
+                                tasks={filteredTasks} 
+                                onTaskClick={handleTaskClick} 
+                            />
                         </div>
                     )}
                 </div>
