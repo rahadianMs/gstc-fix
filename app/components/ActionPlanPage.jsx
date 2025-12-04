@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TaskModal from './TaskModal';
 import TaskDetailPanel from './TaskDetailPanel';
 import StatusSelector from './StatusSelector';
-import TaskGanttChart from './TaskGanttChart'; 
+import TaskGanttChart from './TaskGanttChart';
 
 // --- IKON ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg>;
@@ -121,9 +121,9 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
     };
 
     return (
-        // Gunakan h-screen-minus-sedikit dan overflow-hidden di container utama
         <div className="max-w-7xl mx-auto h-[calc(100vh-6rem)] flex flex-col pb-4">
             
+            {/* HEADER */}
             <div className="flex-shrink-0 mb-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
@@ -162,7 +162,7 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                                     onClick={() => setFilterStatus(status)}
                                     className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all capitalize ${
                                         filterStatus === status 
-                                        ? 'bg-white text-[#1c3d52] shadow-sm' 
+                                        ? 'bg-[#1c3d52] text-white shadow-md' 
                                         : 'text-slate-500 hover:text-slate-700'
                                     }`}
                                 >
@@ -199,10 +199,10 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                 </div>
             </div>
 
-            {/* CONTENT SECTION (Flex-1 agar mengisi sisa ruang) */}
+            {/* CONTENT */}
             <div className="flex-1 min-h-0 flex gap-6 overflow-hidden">
                 
-                {/* Task List (Left) - Tambahkan pb-20 untuk ruang scroll bawah */}
+                {/* Task List */}
                 <div className={`flex-1 overflow-y-auto pr-2 space-y-3 pb-20 ${selectedTask ? 'hidden md:block' : ''}`}>
                     {loading ? (
                         <div className="text-center py-20 text-slate-400">Memuat tugas...</div>
@@ -216,7 +216,13 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                             {filteredTasks.map(task => {
                                 const isConsultantTask = task.creator?.role === 'consultant';
                                 const isDestinationUser = userRole === 'destination';
-                                const isStatusDisabled = isDestinationUser && isConsultantTask;
+                                
+                                // --- LOGIKA BARU: Hanya batasi 'Done' ---
+                                // Jika user adalah destinasi dan tugas dari konsultan, maka 'Done' dilarang
+                                let restrictedStatus = [];
+                                if (isDestinationUser && isConsultantTask) {
+                                    restrictedStatus = ['Done']; 
+                                }
 
                                 return (
                                     <motion.div
@@ -237,7 +243,7 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                                                 <StatusSelector 
                                                     currentStatus={task.status} 
                                                     onStatusChange={(newStatus) => handleStatusChange(task.id, newStatus)}
-                                                    disabled={isStatusDisabled} 
+                                                    restrictedOptions={restrictedStatus} // <-- KIRIM DAFTAR DILARANG
                                                 />
                                             </div>
                                             
@@ -279,7 +285,7 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                     )}
                 </div>
 
-                {/* Task Detail / Gantt Chart (Right) - Juga berikan overflow-y-auto */}
+                {/* Task Detail / Gantt Chart */}
                 <div className={`flex-1 md:flex-[1.2] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full ${!selectedTask ? 'hidden md:flex' : ''}`}>
                     {selectedTask ? (
                         <TaskDetailPanel 
