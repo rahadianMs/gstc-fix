@@ -62,13 +62,10 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
 
     const fetchTasks = async (targetUserId) => {
         setLoading(true);
+        // FETCH DATA LENGKAP: creator & criteria_tags sudah ada di '*'
         const { data, error } = await supabase
             .from('action_plan_tasks')
-            .select(`
-                *, 
-                creator:profiles!action_plan_tasks_created_by_fkey(full_name, role),
-                gstc_criteria(pillar, criterion_code)
-            `) 
+            .select(`*, creator:profiles!action_plan_tasks_created_by_fkey(full_name, role)`) 
             .eq('destination_id', targetUserId)
             .order('created_at', { ascending: false });
 
@@ -88,11 +85,13 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
     };
 
     const handleTaskUpserted = (upsertedTask) => {
+        // Refresh data agar relasi creator & tags ter-load sempurna
         fetchTasks(selectedClientId);
         setIsAddModalOpen(false);
         setIsEditModalOpen(false);
         if (selectedTask && selectedTask.id === upsertedTask.id) {
-            setSelectedTask(null); 
+            // Update detail view jika sedang dibuka
+            setSelectedTask(upsertedTask); 
         }
     };
 
@@ -110,13 +109,21 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
     const handleTaskClick = (task) => setSelectedTask(task);
     const handleEditClick = () => setIsEditModalOpen(true);
 
-    // --- LOGIKA FILTER ---
+    // --- LOGIKA FILTER GANDA (Status & Multi-Pilar) ---
     const filteredTasks = tasks.filter(t => {
-        // Normalisasi status string (hapus spasi, lowercase) agar cocok dengan key
-        const statusKey = t.status.toLowerCase().replace(/\s+/g, '');
+        const statusKey = t.status.toLowerCase().replace(/\s+/g, ''); // Hapus spasi
         
+        // Filter Status
         const statusMatch = filterStatus === 'all' || statusKey === filterStatus;
-        const pillarMatch = filterPillar === 'all' || t.gstc_criteria?.pillar === filterPillar;
+        
+        // Filter Pilar (Cek di dalam array criteria_tags)
+        let pillarMatch = true;
+        if (filterPillar !== 'all') {
+            const tags = t.criteria_tags || [];
+            // True jika minimal SATU tag memiliki pilar yang sesuai
+            pillarMatch = tags.some(tag => tag.pillar === filterPillar);
+        }
+        
         return statusMatch && pillarMatch;
     });
 
@@ -187,7 +194,7 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                         {/* Filter Pilar */}
                         <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
                             <FilterIcon className="text-slate-400" />
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Filter Pilar:</span>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Pilar:</span>
                             <div className="flex gap-1">
                                 {['all', 'A', 'B', 'C', 'D'].map((pillar) => (
                                     <button
@@ -232,10 +239,8 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                                 const isConsultantTask = task.creator?.role === 'consultant';
                                 const isDestinationUser = userRole === 'destination';
                                 
-                                // LOGIKA RESTRITKSI STATUS
+                                // LOGIKA RESTRITKSI STATUS (User tidak bisa langsung Done jika tugas dari Konsultan)
                                 let restrictedStatus = [];
-                                // Jika User = Destinasi DAN Tugas = Dari Konsultan
-                                // Maka User TIDAK BOLEH pilih 'Done' (harus lewat Waiting Verification)
                                 if (isDestinationUser && isConsultantTask) {
                                     restrictedStatus = ['Done']; 
                                 }
@@ -275,12 +280,17 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                                             {task.task_title}
                                         </h3>
                                         
-                                        {/* Badge Pilar */}
-                                        {task.gstc_criteria?.pillar && (
-                                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 mb-2 border border-slate-200">
-                                                Pilar {task.gstc_criteria.pillar} - {task.gstc_criteria.criterion_code}
-                                            </span>
-                                        )}
+                                        {/* TAMPILAN MULTI-TAGS DI CARD */}
+                                        <div className="flex flex-wrap gap-1.5 mb-2">
+                                            {task.criteria_tags && task.criteria_tags.slice(0, 3).map((tag, idx) => (
+                                                <span key={idx} className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                    {tag.criterion_code}
+                                                </span>
+                                            ))}
+                                            {task.criteria_tags && task.criteria_tags.length > 3 && (
+                                                <span className="text-[10px] text-slate-400 self-center">+{task.criteria_tags.length - 3}</span>
+                                            )}
+                                        </div>
 
                                         <div className="flex items-center justify-between mt-1">
                                             {task.assigned_to ? (
@@ -317,7 +327,7 @@ export default function ActionPlanPage({ supabase, user, userRole }) {
                         />
                     ) : (
                         <div className="flex-1 bg-slate-50 p-4 h-full overflow-hidden">
-                            {/* INTEGRASI GANTT CHART */}
+                            {/* Gantt Chart (Klik bar -> Buka Detail) */}
                             <TaskGanttChart 
                                 tasks={filteredTasks} 
                                 onTaskClick={handleTaskClick} 
